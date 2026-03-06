@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>賴嘉彬 處經理 | 全方位保險顧問</title>
+    <!-- 引入 Tailwind CSS (美化樣式) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Lucide Icons (圖示庫) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        .zoom-in { animation: zoomIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        /* 隱藏捲軸 */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 掃描動畫 */
+        @keyframes scan { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
+        .animate-scan { animation: scan 2s ease-in-out infinite; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 relative min-h-screen overflow-x-hidden">
+
+    <!-- 背景裝飾 -->
+    <div class="fixed top-0 left-0 w-full h-80 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-b-[60px] shadow-2xl z-0 pointer-events-none"></div>
+    <div class="fixed top-10 right-10 w-40 h-40 bg-amber-500 opacity-20 rounded-full blur-3xl z-0 pointer-events-none"></div>
+    <div class="fixed top-20 left-10 w-20 h-20 bg-blue-500 opacity-20 rounded-full blur-2xl z-0 pointer-events-none"></div>
+
+    <!-- 主容器 -->
+    <div id="app-container" class="relative z-10 max-w-md mx-auto min-h-screen pb-10"></div>
+
+    <!-- Modal 彈窗 (通用) -->
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 fade-in" onclick="closeModal()">
+        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl zoom-in" onclick="event.stopPropagation()">
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. 資料設定 ---
+        const profile = {
+            name: "賴嘉彬",
+            title: "太陽保險經紀人 處經理 | 華人公益大使",
+            slogan: "《鼓舞人心的十個勇氣》作者。結合三國智慧與AI數據，為您守護資產。",
+            phone: "0982-891-349",
+            email: "lrgben722@gmail.com",
+            lineLink: "https://line.me/ti/p/~mns1314",
+            fbLink: "https://www.facebook.com/lrgben/",
+            // 已更新為您最新指定的大頭照 URL
+            avatar: "https://scontent.fkhh1-2.fna.fbcdn.net/v/t39.30808-1/561363551_10231696219611876_208920575481343703_n.jpg?stp=dst-jpg_s480x480_tt6&_nc_cat=108&ccb=1-7&_nc_sid=1d2534&_nc_ohc=F2hkHQVNew8Q7kNvwF05XIw&_nc_oc=AdnuCDhrO_8LKLe1fv0JT9FPFRQQ0CibAslY2zEoBgSsrdeB-RiFTOse1p-PQacNJzw&_nc_zt=24&_nc_ht=scontent.fkhh1-2.fna&_nc_gid=pSeUwgN7OCB2CqFAyUftog&oh=00_AfvUTTm0h1P0PYgRWEoJ04RG1PdOY4HR2grJK8ogw7fUxg&oe=69A42E43"
+        };
+        const credentials = ["第五屆華人公益大使", "全國保單大賽常勝冠軍業師", "中科大/朝陽/僑光科大 業師", "第一屆台日保險創業導師"];
+
+        // --- 2. 百大題庫設定 ---
+        const questionPool = [
+            { q: "實支實付醫療險的主要功能是？", options: ["花多少賠多少(限額內)", "定額給付", "投資賺利息"], ans: 0 },
+            { q: "醫療險的「等待期」通常是多久？", options: ["沒有等待期", "30天", "180天"], ans: 1 },
+            { q: "癌症險的「等待期」通常是多久？", options: ["30天", "90天", "半年"], ans: 1 },
+            { q: "發生車禍第一件事情應該做什麼？", options: ["打給保險業務", "報警", "私下和解"], ans: 1 },
+            { q: "強制險有賠償對方車輛的修車費嗎？", options: ["有", "沒有", "看肇事責任"], ans: 1 },
+            { q: "投保前就有的疾病(既往症)，保險公司會理賠嗎？", options: ["不理賠", "會理賠", "看醫生怎麼說"], ans: 0 },
+            { q: "意外險理賠的三大要件是？", options: ["外來、突發、非疾病", "生病、住院、手術", "遺傳、慢性、漸進"], ans: 0 },
+            { q: "投保時最重要的原則是什麼？", options: ["隱瞞病情", "聽從鄰居建議", "誠實告知"], ans: 2 },
+            { q: "「豁免保費」的意思是？", options: ["保費打八折", "發生特定事故後免繳保費", "終止契約退還保費"], ans: 1 },
+            { q: "保單簽收後的「契約撤銷權(猶豫期)」通常是幾天？", options: ["7天", "10天", "30天"], ans: 1 },
+            { q: "第三人責任險主要是賠給誰？", options: ["別人的車與人", "自己的車", "駕駛本人"], ans: 0 },
+            { q: "長照險的理賠依據通常是什麼？", options: ["住院天數", "巴氏量表或認知功能障礙", "殘障手冊"], ans: 1 },
+            { q: "「雙十原則」建議保費支出佔年收入的多少？", options: ["10%", "20%", "30%"], ans: 0 },
+            { q: "車體險中，哪一種有賠償「不明車損(如停路邊被刮)」？", options: ["甲式", "乙式", "丙式"], ans: 0 },
+            { q: "為了轉嫁家庭經濟支柱倒下的風險，最適合的險種是？", options: ["壽險", "儲蓄險", "年金險"], ans: 0 },
+            { q: "重大傷病險的理賠標準通常是依據？", options: ["健保局重大傷病卡", "醫生診斷證明", "住院天數"], ans: 0 },
+            { q: "投資型保單的投資盈虧由誰承擔？", options: ["保險公司", "保戶自行承擔", "業務員"], ans: 1 },
+            { q: "住院日額醫療險主要用來補貼什麼？", options: ["自費標靶藥物", "病房費與薪水損失", "達文西手術費"], ans: 1 },
+            { q: "旅平險中的「班機延誤」通常延誤幾小時以上可啟動理賠？", options: ["1小時", "4小時", "24小時"], ans: 1 },
+            { q: "住宅火險的保額應該依據什麼來設定？", options: ["房屋市價", "房屋重置成本(造價)", "土地價值"], ans: 1 },
+            { q: "如果忘記繳保費，保險公司通常會給多久的「寬限期」？", options: ["10天", "30天", "半年"], ans: 1 },
+            { q: "機車也需要投保強制險嗎？", options: ["需要", "不需要", "看排氣量"], ans: 0 },
+            { q: "門診手術在現代醫療越來越常見，哪種保險能有效理賠？", options: ["終身醫療(日額)", "實支實付醫療險", "癌症險"], ans: 1 },
+            { q: "買保險時，指定受益人的好處是？", options: ["理賠金免扣遺產稅(限額內)", "理賠速度變慢", "保費比較便宜"], ans: 0 },
+            { q: "「超額責任險」被稱為超跑救星，它是附加在哪個險種之下？", options: ["強制險", "第三人責任險", "車體險"], ans: 1 },
+            { q: "失能扶助險(失能險)的理賠依據是？", options: ["失能等級表(1-11級)", "巴氏量表", "身心障礙手冊"], ans: 0 },
+            { q: "如果出國滑雪受傷，哪種保險可以理賠國外醫療費？", options: ["國內健保全額補助", "旅平險的海外突發疾病/意外醫療", "第三人責任險"], ans: 1 },
+            { q: "「自然費率」的保費會隨著年齡如何變化？", options: ["維持不變", "逐年/逐距增加", "越來越便宜"], ans: 1 },
+            { q: "終身醫療險通常保費繳費年期為多久？", options: ["繳到100歲", "繳費10或20年保障終身", "每年繳費才有效"], ans: 1 },
+            { q: "什麼情況下，保險公司可以「解除契約」不退保費？", options: ["保戶出國", "保戶帶病投保且未誠實告知", "保戶換工作"], ans: 1 },
+            { q: "如果換了高風險工作(如內勤變工地)，需要通知保險公司嗎？", options: ["需要(職業變更告知)", "不需要", "等理賠再說"], ans: 0 },
+            { q: "遇到颱風淹水導致車子泡水，一般車體險有賠嗎？", options: ["有賠", "不賠，需附加颱風洪水險", "強制險會賠"], ans: 1 },
+            { q: "防癌險中的「初次罹癌保險金」是一次給付還是分期給付？", options: ["一次給付", "分期給付", "實報實銷"], ans: 0 },
+            { q: "微創手術(如海扶刀)費用昂貴，應優先規劃哪種險種轉嫁？", options: ["住院日額", "實支實付醫療險", "失能險"], ans: 1 },
+            { q: "若夫妻同時因意外身故，理賠金會如何分配？", options: ["充公", "依據法定繼承人順位", "全部給配偶的父母"], ans: 1 },
+            { q: "「平準費率」的意思是？", options: ["每年保費一樣", "保費會隨年齡增加", "保額會逐年遞減"], ans: 0 },
+            { q: "開車不小心撞到路人，哪一個險種會先啟動理賠？", options: ["第三人責任險", "強制險", "超額責任險"], ans: 1 },
+            { q: "如果因為憂鬱症住院，一般的醫療險會理賠嗎？", options: ["一定會", "精神疾病多列為除外責任(依條款)", "強制險會賠"], ans: 1 },
+            { q: "小孩打破百貨公司的昂貴花瓶，哪種保險可以賠？", options: ["個人責任保險", "意外險", "醫療險"], ans: 0 },
+            { q: "店面發生客人滑倒受傷，老闆需要用到什麼保險？", options: ["商業火險", "公共意外責任險", "雇主責任險"], ans: 1 },
+            { q: "員工上下班途中發生車禍，算職災嗎？", options: ["不算", "算，雇主有補償責任", "看員工有沒有喝酒"], ans: 1 },
+            { q: "「保險利益」的意思是？", options: ["保險公司賺的錢", "要保人與被保險人之間的關係", "理賠金的利息"], ans: 1 },
+            { q: "定期壽險跟終身壽險最大的差別是？", options: ["理賠金額", "保障期限與保費高低", "投保年齡"], ans: 1 },
+            { q: "新生兒什麼時候投保最適合？", options: ["出生報完戶口且健康時盡快投保", "1歲以後", "上小學前"], ans: 0 },
+            { q: "如果實支實付醫療險只接受「正本理賠」，可以拿影本去請款嗎？", options: ["可以", "不行", "看業務員交情"], ans: 1 },
+            { q: "「主約」跟「附約」的差別？", options: ["附約可以單獨買", "附約必須依附主約存在", "主約比較便宜"], ans: 1 },
+            { q: "保險法規定，幾歲以下的未成年人身故，不能理賠一般身故保險金？", options: ["10歲", "15歲", "20歲"], ans: 1 },
+            { q: "如果出車禍，自己的保險公司先賠給我，再去向肇事者討錢，這叫什麼權利？", options: ["解約權", "代位求償權", "豁免權"], ans: 1 },
+            { q: "遇到理賠爭議，除了找業務員，還可以找哪個機構協助？", options: ["警察局", "金融消費評議中心", "消基會"], ans: 1 },
+            { q: "儲蓄險如果提前解約，可能會面臨什麼狀況？", options: ["本金虧損", "拿回雙倍本金", "沒有任何影響"], ans: 0 },
+            { q: "醫療險條款寫「住院」才賠，那「急診留觀」通常算不算？", options: ["一定算", "通常不算(須依條款約定)", "健保局決定"], ans: 1 },
+            { q: "「年金險」主要為了解決什麼人生風險？", options: ["走得太早", "活得太久(長壽風險)", "意外住院"], ans: 1 },
+            { q: "借別人的車來開，撞壞了，車主有買車體險(許可使用)，保險公司賠完會向我求償嗎？", options: ["不會", "會(代位求償)", "看有沒有受傷"], ans: 1 },
+            { q: "如果酒駕肇事，保險公司對於第三人責任險會如何處理？", options: ["照賠", "不賠或賠完後向駕駛追償", "只賠一半"], ans: 1 },
+            { q: "買保險填寫健康告知書時，應該以誰的認知為主？", options: ["業務員", "保戶本人的誠實告知", "保險公司"], ans: 1 },
+            { q: "如果罹患原位癌(初期癌症)，一般防癌險會全額理賠嗎？", options: ["會", "通常只理賠部分比例(如10%)", "完全不賠"], ans: 1 },
+            { q: "高齡者投保最容易遇到的問題是？", options: ["保費便宜", "體況無法通過核保或保費極高", "不用體檢"], ans: 1 },
+            { q: "微型保險主要是針對什麼族群設計的？", options: ["高資產族群", "經濟弱勢/低收入戶", "中小企業主"], ans: 1 },
+            { q: "公司幫員工保的「團險」，員工離職後保障還在嗎？", options: ["還在", "自動失效", "看老闆心情"], ans: 1 },
+            { q: "保單借款的利息通常比一般信貸？", options: ["高", "低或差不多，且不影響聯徵", "不用利息"], ans: 1 },
+            { q: "保險法規定，理賠金遲延給付，保險公司應加計多少利息？", options: ["年利一分(10%)", "年利1%", "無息"], ans: 0 },
+            { q: "發生火災時，為了救火而打破的玻璃，火險會賠嗎？", options: ["會", "不會", "看玻璃多厚"], ans: 0 },
+            { q: "飛機因颱風取消，信用卡刷卡送的旅平險通常會賠嗎？", options: ["一定賠", "通常需刷滿機票8成才有旅遊不便險", "強制險會賠"], ans: 1 },
+            { q: "寵物保險主要理賠什麼？", options: ["寵物的醫療費及侵權責任", "寵物伙食費", "寵物美容費"], ans: 0 },
+            { q: "「復效」是指什麼？", options: ["保單停效後申請恢復效力", "保單解約後重新買", "保單增加保額"], ans: 0 },
+            { q: "停效超過多久，保險公司可以拒絕復效？", options: ["半年", "2年", "10年"], ans: 1 },
+            { q: "如果在國外發生意外，需要回國申請理賠，醫療收據需要做什麼處理？", options: ["直接拿給業務", "需經過當地駐外單位驗證", "拍照就好"], ans: 1 },
+            { q: "被保險人幾歲以下可以由父母代為簽名投保？", options: ["7歲", "未滿7歲", "20歲"], ans: 1 },
+            { q: "「除外責任」的意思是？", options: ["保險公司不理賠的項目", "保險公司加倍理賠", "保戶可以不繳保費"], ans: 0 },
+            { q: "如果因為整形美容手術住院，醫療險會賠嗎？", options: ["會", "不會(屬除外責任)", "看醫生技術"], ans: 1 },
+            { q: "因為洗牙造成的門診費用，醫療險會賠嗎？", options: ["會", "一般門診不賠", "看哪家醫院"], ans: 1 },
+            { q: "發生車禍時的「折舊」概念通常應用在哪個險種？", options: ["第三人體傷", "車體險與財損理賠", "強制險"], ans: 1 },
+            { q: "「保險費」跟「保險金」哪裡不一樣？", options: ["一樣", "保費是交給公司的錢，保險金是理賠拿到的錢", "保險金是交給公司的"], ans: 1 },
+            { q: "如果發現業務員私吞保費，保單還有效嗎？", options: ["無效", "若有收據，保險公司仍須負責", "保戶自認倒楣"], ans: 1 },
+            { q: "保險理賠請求權時效是多久？", options: ["1年", "2年", "5年"], ans: 1 },
+            { q: "因為犯罪行為(如搶劫)受傷，保險公司會賠嗎？", options: ["會", "不會(屬除外責任)", "賠一半"], ans: 1 },
+            { q: "「職業等級」分類，哪一類的危險程度最高、保費最貴？", options: ["第1類(內勤)", "第6類(如高樓洗窗工)", "都一樣"], ans: 1 },
+            { q: "如果出國留學，國內的健保可以申請停保嗎？", options: ["不行", "出國6個月以上可以申請停保", "出國1天就可以停"], ans: 1 },
+            { q: "一般所說的「保單帳戶價值」是出現在哪種保單？", options: ["終身醫療", "投資型保單", "意外險"], ans: 1 },
+            { q: "雇主幫員工買意外險，可以把受益人寫雇主自己嗎？", options: ["可以", "不行，違反保險利益", "看員工同不同意"], ans: 1 },
+            { q: "保單可以拿去銀行抵押貸款嗎？", options: ["可以", "不行", "只能向原保險公司申請保單借款"], ans: 2 },
+            { q: "如果得了法定傳染病被隔離，什麼保險會啟動？", options: ["車險", "法定傳染病防疫險/醫療險", "火險"], ans: 1 },
+            { q: "「實質課稅原則」是用來防範什麼行為？", options: ["逃漏稅/避稅的投保行為", "保費太貴", "理賠太少"], ans: 0 },
+            { q: "買保險送的「海外急難救助」通常包含什麼？", options: ["免費機票", "醫療專機或代墊醫療費", "當地導遊"], ans: 1 },
+            { q: "「保額」的意思是？", options: ["每年要繳的錢", "發生事故時最高可理賠的金額", "業務員的佣金"], ans: 1 },
+            { q: "如果把車借給無照駕駛的朋友出車禍，保險公司賠嗎？", options: ["賠", "不賠或賠付後向無照者追償", "只賠車不賠人"], ans: 1 },
+            { q: "住宅地震基本險的最高理賠額度通常是？", options: ["150萬", "500萬", "無上限"], ans: 0 },
+            { q: "「超額地震險」的功能是？", options: ["賠付超過基本險150萬以上的建築物損失", "賠償精神損失", "賠償汽車損失"], ans: 0 },
+            { q: "一般壽險對於「戰爭」導致的身故，會理賠嗎？", options: ["不賠", "會理賠(但意外險通常除外)", "看在哪個國家"], ans: 1 },
+            { q: "產險公司跟壽險公司賣的意外險，最大差異通常在？", options: ["產險較便宜但不保證續保", "壽險不賠骨折", "產險只賠車"], ans: 0 },
+            { q: "「保證續保」的意思是？", options: ["保費永遠不變", "不管體況變差或理賠過，保險公司都必須讓你續保", "保額會自動增加"], ans: 1 },
+            { q: "如果因為喝醉酒摔下樓梯，意外險會賠嗎？", options: ["會", "酒精濃度超標屬除外責任，不賠", "賠一半"], ans: 1 },
+            { q: "「宣告利率」跟「預定利率」哪一個會浮動？", options: ["都會浮動", "宣告利率", "預定利率"], ans: 1 },
+            { q: "買美元保單最大的風險是？", options: ["保險公司倒閉", "匯率風險", "沒有壽險保障"], ans: 1 },
+            { q: "分紅保單的分紅是保證給付的嗎？", options: ["是", "不保證，依保險公司經營績效而定", "前幾年保證"], ans: 1 },
+            { q: "如果要保人跟被保險人不同人，要保人身故時，這張保單會變成什麼？", options: ["自動失效", "要保人的遺產，需列入遺產稅計算", "被保險人的財產"], ans: 1 },
+            { q: "保險法規定，被保險人年齡錯誤時該如何處理？", options: ["保單無效", "依真實年齡退還或補繳保費差額", "業務員賠償"], ans: 1 },
+            { q: "保險契約是由誰來解釋才有效？", options: ["業務員", "依據保單條款文字，若有疑義作有利於被保險人之解釋", "保戶自己"], ans: 1 },
+            { q: "買保險最好的時機是？", options: ["生病的時候", "老的時候", "健康且年輕的時候"], ans: 2 },
+            { q: "太陽保險經紀人的賴處經理，最擅長為客戶做什麼？", options: ["推銷不需要的保單", "全方位風險評估與資產守護", "請客吃飯"], ans: 1 }
+        ];
+
+        // --- 3. 狀態管理 ---
+        let state = {
+            currentView: 'home',
+            retirement: { step: 'input', inputs: { currentAge: 35, retireAge: 65, lifeAge: 85, insuredSalary: 45800, laborYears: 15, dailyFoodCost: 300, currentSavings: 500000 }, risk: '', result: null },
+            rainbow: { date: '', result: null },
+            quiz: { step: 'start', score: 0, currentQ: 0, showFeedback: false, selectedOption: null, questions: [] },
+            carsos: { tab: 'sop' },
+            photo: { step: 'camera', checklist: { life: false, medical: false, cancer: false, accident: false } },
+            enterprise: { topic: 'fire' },
+            threekingdoms: { selected: null }
+        };
+
+        // --- 4. 渲染核心 ---
+        function render() {
+            const container = document.getElementById('app-container');
+            if (state.currentView === 'home') container.innerHTML = renderHome();
+            else if (state.currentView === 'retirement') container.innerHTML = renderRetirement();
+            else if (state.currentView === 'rainbow') container.innerHTML = renderRainbow();
+            else if (state.currentView === 'carsos') container.innerHTML = renderCarSOS();
+            else if (state.currentView === 'threekingdoms') container.innerHTML = renderThreeKingdoms();
+            else if (state.currentView === 'quiz') container.innerHTML = renderQuiz();
+            else if (state.currentView === 'photo') container.innerHTML = renderPhoto();
+            else if (state.currentView === 'enterprise') container.innerHTML = renderEnterprise();
+            else if (state.currentView === 'video') container.innerHTML = renderVideo();
+            
+            if (window.lucide) lucide.createIcons();
+            if (state.currentView === 'home') window.scrollTo(0,0);
+        }
+
+        // --- 5. 頁面元件 ---
+
+        // (A) 首頁
+        function renderHome() {
+            const menuItems = [
+                { id: 'carsos', title: "車禍理賠 SOS", icon: "car", color: "bg-red-100 text-red-600", desc: "發生車禍別慌張！SOP 現場引導、險種理賠範圍與報警流程。" },
+                { id: 'threekingdoms', title: "三國智慧談保險", icon: "book-open", color: "bg-amber-100 text-amber-700", desc: "如果劉備有保險？借鏡歷史名人的成敗，規劃現代人的財富堡壘。" },
+                { id: 'quiz', title: "保險知識測驗", icon: "brain", color: "bg-indigo-100 text-indigo-600", desc: "100題大題庫隨機挑戰！您是保險達人嗎？看看能拿幾分！" },
+                { id: 'photo', title: "AI 拍照保單健診", icon: "camera", color: "bg-blue-100 text-blue-600", desc: "不用翻箱倒櫃。只要拍下保單首頁，AI 幫您初步檢視缺口。" },
+                { id: 'video', title: "感人保險影院", icon: "play-circle", color: "bg-pink-100 text-pink-600", desc: "精選台、韓、泰感人廣告，帶您看見保險的真諦與愛的重量。" },
+                { id: 'retirement', title: "退休資產配置", icon: "bar-chart-3", color: "bg-teal-100 text-teal-600", desc: "精算勞保與生活缺口，提供三種生活等級的智能保單建議。" },
+                { id: 'enterprise', title: "全方位產物防護", icon: "shield", color: "bg-green-100 text-green-600", desc: "企業與個人產險全收錄。商業火險、雇主責任、住宅火險、旅平險。" },
+                { id: 'rainbow', title: "彩虹數字測驗", icon: "palette", color: "bg-violet-100 text-violet-600", desc: "算出您的生命密碼！包含天賦、適合職業與身體保養重點。" },
+                { id: 'recruit', title: "創業導師招募", icon: "briefcase", color: "bg-slate-800 text-white", desc: "跟著處經理一起創業！完整的教育訓練與 AI 系統支援。", full: true }
+            ];
+
+            return `
+                <div class="px-4 pt-10 fade-in">
+                    <div class="bg-white rounded-3xl shadow-xl p-6 mb-8 text-center border border-slate-100 relative overflow-hidden group">
+                        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-300 via-amber-500 to-amber-300"></div>
+                        <div class="relative inline-block mb-3 mt-2">
+                            <div class="w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-slate-200 via-slate-400 to-slate-200 mx-auto shadow-lg overflow-hidden border-4 border-white">
+                                <img src="${profile.avatar}" class="w-full h-full object-cover object-top bg-slate-100" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'">
+                            </div>
+                            <div class="absolute bottom-1 right-1 bg-amber-500 text-white p-1.5 rounded-full border-2 border-white shadow-sm"><i data-lucide="award" class="w-4 h-4"></i></div>
+                        </div>
+                        <h1 class="text-2xl font-bold text-slate-900 mb-1">${profile.name}</h1>
+                        <p class="text-amber-600 font-bold mb-3 text-sm uppercase tracking-wide">${profile.title}</p>
+                        <div class="flex flex-wrap justify-center gap-2 mb-5">
+                            ${credentials.map(c => `<span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-1 rounded-full font-medium border border-slate-200">${c}</span>`).join('')}
+                        </div>
+                        <p class="text-slate-500 text-sm mb-6 leading-relaxed italic border-l-4 border-amber-400 pl-3 text-left bg-slate-50 py-2 rounded-r-lg">"${profile.slogan}"</p>
+                        <div class="flex gap-3 justify-center mb-4">
+                            <a href="${profile.lineLink}" target="_blank" class="flex-1 bg-[#06C755] hover:bg-[#05b64d] text-white py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-green-100 transition-all font-bold"><i data-lucide="message-circle" class="w-5 h-5"></i> 加 LINE 諮詢</a>
+                            <a href="${profile.fbLink}" target="_blank" class="flex-1 bg-[#1877F2] hover:bg-[#166fe5] text-white py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all font-bold"><i data-lucide="facebook" class="w-5 h-5"></i> 追蹤 FB</a>
+                        </div>
+                        <div class="flex justify-center gap-6 text-slate-400 text-xs mt-4 border-t border-slate-100 pt-3">
+                            <a href="tel:${profile.phone}" class="flex items-center gap-1 hover:text-slate-600"><i data-lucide="phone" class="w-3 h-3"></i> 撥號</a>
+                            <a href="mailto:${profile.email}" class="flex items-center gap-1 hover:text-slate-600"><i data-lucide="mail" class="w-3 h-3"></i> Email</a>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 mb-4 px-2">
+                        <i data-lucide="users" class="w-5 h-5 text-amber-600"></i><h2 class="text-lg font-bold text-slate-800">全方位服務漏斗</h2>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-8">
+                        ${menuItems.map(item => `
+                            <button onclick="navigate('${item.id}')" class="${item.full ? 'col-span-2 bg-gradient-to-r from-slate-800 to-slate-700 border-none' : 'bg-white border border-slate-100'} p-3 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all text-left group relative overflow-hidden flex flex-col justify-between h-32">
+                                <div class="flex justify-between items-start">
+                                    <div class="p-2 rounded-lg ${item.full ? 'bg-white/20 text-white' : item.color} mb-2"><i data-lucide="${item.icon}" class="w-6 h-6"></i></div>
+                                    <i data-lucide="chevron-right" class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity ${item.full ? 'text-white' : 'text-slate-300'}"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-sm leading-tight mb-1 ${item.full ? 'text-white text-lg' : 'text-slate-800'}">${item.title}</h3>
+                                    <p class="text-[10px] line-clamp-2 leading-snug ${item.full ? 'text-slate-300' : 'text-slate-500'}">${item.desc}</p>
+                                </div>
+                            </button>
+                        `).join('')}
+                    </div>
+                     <div class="text-center text-xs text-slate-400 pb-8"><p>© 2024 ${profile.name} 太陽保險經紀人</p></div>
+                </div>
+            `;
+        }
+
+        // (B) 測驗專區 (百題題庫邏輯)
+        function renderQuiz() {
+            const { step, score, currentQ, showFeedback, selectedOption, questions } = state.quiz;
+
+            if (step === 'start') {
+                return `
+                    <div class="min-h-screen bg-indigo-50 slide-in">
+                        <div class="sticky top-0 bg-indigo-50/90 backdrop-blur-md p-4 z-10">
+                            <button onclick="navigate('home')" class="p-2 bg-white rounded-full shadow-sm hover:bg-slate-100"><i data-lucide="arrow-left" class="text-slate-600"></i></button>
+                        </div>
+                        <div class="p-6 text-center pt-10">
+                            <h2 class="text-3xl font-bold text-slate-800 mb-2">風險金頭腦</h2>
+                            <div class="w-32 h-32 bg-white rounded-full flex items-center justify-center mx-auto my-8 shadow-xl border-4 border-indigo-100 animate-bounce">
+                                <i data-lucide="brain" class="w-16 h-16 text-indigo-600"></i>
+                            </div>
+                            <p class="mb-2 text-slate-600 font-bold text-lg">您是保險達人嗎？</p>
+                            <p class="mb-10 text-slate-500 leading-relaxed text-sm">系統將從 <span class="font-bold text-indigo-600">100 題</span> 實務題庫中<br>隨機抽選 10 題。<br>滿分 100 分，快來挑戰！</p>
+                            <button onclick="startQuiz()" class="w-full bg-indigo-600 text-white px-6 py-4 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-all flex justify-center items-center gap-2">
+                                開始測驗 <i data-lucide="arrow-right" class="w-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (step === 'playing') {
+                const q = questions[currentQ];
+                return `
+                    <div class="min-h-screen bg-indigo-50 slide-in p-5 pt-8">
+                        <div class="flex justify-between items-center mb-6">
+                            <span class="text-indigo-600 font-bold bg-white px-3 py-1 rounded-full shadow-sm border border-indigo-100">第 ${currentQ + 1} / 10 題</span>
+                            <span class="bg-indigo-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-sm">得分: ${score}</span>
+                        </div>
+                        
+                        <div class="w-full h-2 bg-indigo-200 rounded-full mb-8 overflow-hidden">
+                            <div class="h-full bg-indigo-600 rounded-full transition-all duration-300" style="width: ${((currentQ) / 10) * 100}%"></div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl shadow-lg mb-6 border border-indigo-100 min-h-[160px] flex items-center justify-center relative">
+                            <i data-lucide="help-circle" class="absolute top-4 left-4 text-indigo-100 w-10 h-10"></i>
+                            <h2 class="text-xl font-bold text-slate-800 text-left leading-relaxed relative z-10">${q.q}</h2>
+                        </div>
+
+                        <div class="space-y-3">
+                            ${q.options.map((opt, idx) => {
+                                let btnClass = "bg-white border-2 border-slate-100 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50";
+                                let iconHtml = "";
+                                if (showFeedback) {
+                                    if (idx === q.ans) {
+                                        btnClass = "bg-green-500 border-green-500 text-white scale-[1.02] shadow-md";
+                                        iconHtml = `<i data-lucide="check-circle-2" class="w-5 h-5 text-white"></i>`;
+                                    } else if (idx === selectedOption) {
+                                        btnClass = "bg-red-500 border-red-500 text-white";
+                                        iconHtml = `<i data-lucide="x-circle" class="w-5 h-5 text-white"></i>`;
+                                    } else {
+                                        btnClass = "bg-slate-50 border-slate-100 text-slate-400 opacity-60";
+                                    }
+                                }
+                                return `
+                                <button onclick="answerQuiz(${idx})" ${showFeedback ? 'disabled' : ''} 
+                                    class="w-full p-4 rounded-xl font-bold text-left transition-all duration-200 shadow-sm flex justify-between items-center ${btnClass}">
+                                    <span><span class="mr-2 opacity-70">${String.fromCharCode(65 + idx)}.</span> ${opt}</span>
+                                    ${iconHtml}
+                                </button>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (step === 'result') {
+                let res = { t: "保險小白，還有進步空間", c: "text-red-500", bg: "bg-red-100", i: "alert-triangle", msg: "買錯比買貴更可怕！趕快跟處經理約喝咖啡，釐清觀念避免未來理賠吃虧。" };
+                if (score >= 80) res = { t: "太神了！保險達人", c: "text-amber-500", bg: "bg-amber-100", i: "trophy", msg: "您擁有非常精準的風險觀念！完全具備守護家人的能力，甚至可以考慮來保險業發展喔！" };
+                else if (score >= 60) res = { t: "還不錯！觀念及格", c: "text-blue-600", bg: "bg-blue-100", i: "check-circle-2", msg: "您具備了基本的保險常識。建議定期請專家幫您檢視保單，補足隱藏缺口。" };
+
+                return `
+                    <div class="min-h-screen bg-slate-50 slide-in p-5 pt-12 flex flex-col items-center text-center">
+                        <div class="w-32 h-32 ${res.bg} rounded-full flex items-center justify-center mb-6 shadow-lg border-4 border-white">
+                            <i data-lucide="${res.i}" class="w-16 h-16 ${res.c}"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-800 mb-2">${res.t}</h2>
+                        <div class="text-7xl font-black ${res.c} mb-8 drop-shadow-sm">${score}<span class="text-2xl text-slate-400 ml-1">分</span></div>
+                        
+                        <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-100 mb-8 w-full text-left relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-1 h-full ${res.bg.replace('bg-','bg-').replace('100','500')}"></div>
+                            <p class="text-slate-600 leading-relaxed font-medium pl-2">${res.msg}</p>
+                        </div>
+                        
+                        <div class="w-full space-y-3 mt-auto pb-8">
+                            <a href="${profile.lineLink}" target="_blank" class="w-full bg-[#06C755] hover:bg-[#05b64d] text-white py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95">
+                                <i data-lucide="message-circle"></i> 截圖傳給處經理領獎/諮詢
+                            </a>
+                            <button onclick="startQuiz()" class="w-full bg-white border-2 border-slate-200 text-slate-600 py-4 rounded-xl font-bold shadow-sm hover:bg-slate-50">
+                                再挑戰一次
+                            </button>
+                            <button onclick="navigate('home')" class="w-full py-3 text-slate-400 text-sm underline">返回首頁</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // 測驗邏輯
+        function startQuiz() {
+            const shuffled = [...questionPool].sort(() => 0.5 - Math.random());
+            state.quiz.questions = shuffled.slice(0, 10);
+            state.quiz.score = 0;
+            state.quiz.currentQ = 0;
+            state.quiz.step = 'playing';
+            state.quiz.showFeedback = false;
+            state.quiz.selectedOption = null;
+            render();
+        }
+
+        function answerQuiz(optionIndex) {
+            if (state.quiz.showFeedback) return; 
+            
+            state.quiz.selectedOption = optionIndex;
+            state.quiz.showFeedback = true;
+            render(); 
+
+            setTimeout(() => {
+                const q = state.quiz.questions[state.quiz.currentQ];
+                if (optionIndex === q.ans) {
+                    state.quiz.score += 10;
+                }
+
+                if (state.quiz.currentQ < 9) {
+                    state.quiz.currentQ += 1;
+                    state.quiz.showFeedback = false;
+                    state.quiz.selectedOption = null;
+                } else {
+                    state.quiz.step = 'result';
+                }
+                render();
+            }, 1200);
+        }
+
+        // (C) 退休資產配置 
+        function renderRetirement() {
+            const { step, inputs, risk } = state.retirement;
+            const calculate = () => {
+                const workYears = inputs.retireAge - inputs.currentAge;
+                const retireYears = inputs.lifeAge - inputs.retireAge;
+                const inflationRate = 0.02; 
+                const inflationFactor = Math.pow(1 + inflationRate, workYears);
+                const pension = Math.round(inputs.insuredSalary * (inputs.laborYears + workYears) * 0.0155);
+                const monthlyFood = inputs.dailyFoodCost * 30;
+                
+                const calcLevel = (base) => {
+                    const futureMonthly = Math.round(base * inflationFactor);
+                    const monthlyGap = Math.max(0, futureMonthly - pension);
+                    const totalGap = Math.max(0, (monthlyGap * 12 * retireYears) - inputs.currentSavings);
+                    return { totalGap };
+                };
+                const basic = calcLevel(monthlyFood);
+                const standard = calcLevel(monthlyFood + 20000);
+                const premium = calcLevel(monthlyFood + 50000);
+                const monthlyFoodGap = Math.max(0, Math.round(monthlyFood * inflationFactor) - pension);
+                const foodGap = Math.max(0, (monthlyFoodGap * 12 * retireYears) - inputs.currentSavings);
+                return { pension, basic, standard, premium, inflationFactor, foodGap };
+            };
+            const result = step === 'result' ? calculate() : null;
+            const format = (n) => new Intl.NumberFormat('zh-TW').format(n);
+            const recommendations = {
+                conservative: {t: "保守型配置", d: "首重資產保本，不願承受波動。", p: "台幣利率變動型終身壽險", c: "bg-blue-100 text-blue-700"},
+                moderate: {t: "穩健型配置", d: "接受小幅波動，追求美元增值。", p: "美元利變 / 美元分紅保單", c: "bg-indigo-100 text-indigo-700"},
+                aggressive: {t: "積極型配置", d: "追求資產最大化，長期複利。", p: "投資型保單 (專家代操)", c: "bg-orange-100 text-orange-700"}
+            };
+
+            return `
+                <div class="min-h-screen bg-slate-50 slide-in">
+                    <div class="sticky top-0 bg-white/90 backdrop-blur-md border-b p-4 flex items-center gap-3 z-10 shadow-sm">
+                        <button onclick="navigate('home')" class="p-2 hover:bg-slate-100 rounded-full"><i data-lucide="arrow-left" class="text-slate-600"></i></button>
+                        <span class="font-bold text-slate-800">退休資產配置顧問</span>
+                    </div>
+                    <div class="p-6 pb-20">
+                        ${step === 'input' ? `
+                            <h2 class="text-2xl font-bold text-slate-800 mb-2">退休金算過了嗎？</h2>
+                            <p class="text-slate-500 mb-6 text-sm">輸入勞保資料，精算「吃飯錢」與「理想生活」的真實缺口。</p>
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-3 mb-4">
+                                <h3 class="font-bold text-slate-700 text-sm flex gap-2"><i data-lucide="user" class="w-4 h-4 text-blue-500"></i> 基本設定</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div><label class="text-xs text-slate-400">現在年齡</label><input type="number" onchange="updateRetirement('currentAge', this.value)" value="${inputs.currentAge}" class="w-full text-lg font-bold border-b border-slate-200 focus:border-blue-500 outline-none py-1"></div>
+                                    <div><label class="text-xs text-slate-400">退休年齡</label><input type="number" onchange="updateRetirement('retireAge', this.value)" value="${inputs.retireAge}" class="w-full text-lg font-bold border-b border-slate-200 focus:border-blue-500 outline-none py-1"></div>
+                                    <div><label class="text-xs text-slate-400">預計活到</label><input type="number" onchange="updateRetirement('lifeAge', this.value)" value="${inputs.lifeAge}" class="w-full text-lg font-bold border-b border-slate-200 focus:border-blue-500 outline-none py-1"></div>
+                                    <div><label class="text-xs text-slate-400">目前存款</label><input type="number" onchange="updateRetirement('currentSavings', this.value)" value="${inputs.currentSavings}" class="w-full text-lg font-bold border-b border-slate-200 focus:border-blue-500 outline-none py-1"></div>
+                                </div>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-3 mb-4">
+                                <h3 class="font-bold text-slate-700 text-sm flex gap-2"><i data-lucide="briefcase" class="w-4 h-4 text-teal-500"></i> 勞保估算</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div><label class="text-xs text-slate-400">投保薪資</label><input type="number" onchange="updateRetirement('insuredSalary', this.value)" value="${inputs.insuredSalary}" class="w-full text-lg font-bold border-b border-slate-200 outline-none py-1"></div>
+                                    <div><label class="text-xs text-slate-400">累積年資</label><input type="number" onchange="updateRetirement('laborYears', this.value)" value="${inputs.laborYears}" class="w-full text-lg font-bold border-b border-slate-200 outline-none py-1"></div>
+                                </div>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-3">
+                                <h3 class="font-bold text-slate-700 text-sm flex gap-2"><i data-lucide="utensils" class="w-4 h-4 text-orange-500"></i> 生存底線</h3>
+                                <div><label class="text-xs text-slate-400">每日餐費 (現值)</label><input type="number" onchange="updateRetirement('dailyFoodCost', this.value)" value="${inputs.dailyFoodCost}" class="w-full text-lg font-bold border-b border-slate-200 outline-none pl-2"></div>
+                            </div>
+                            <div class="text-center text-xs text-slate-400 mt-3">系統將自動以 <span class="text-red-500 font-bold">2% 通膨率</span> 試算未來金額</div>
+                            <button onclick="setRetirementStep('risk')" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-lg shadow-lg mt-4 flex items-center justify-center gap-2">下一步：屬性分析 <i data-lucide="arrow-right"></i></button>
+                        ` : step === 'risk' ? `
+                            <h2 class="text-xl font-bold text-slate-800 mb-2">請選擇您的投資屬性</h2>
+                            <div class="space-y-3 mt-6">
+                                <button onclick="setRisk('conservative')" class="w-full p-5 rounded-2xl border-2 hover:border-blue-500 bg-white text-left flex items-center gap-4">
+                                    <div class="bg-blue-100 text-blue-600 p-3 rounded-full"><i data-lucide="shield"></i></div>
+                                    <div><h3 class="font-bold text-slate-800">保守型</h3><p class="text-xs text-slate-500">無法接受虧損，追求穩定。</p></div>
+                                </button>
+                                <button onclick="setRisk('moderate')" class="w-full p-5 rounded-2xl border-2 hover:border-indigo-500 bg-white text-left flex items-center gap-4">
+                                    <div class="bg-indigo-100 text-indigo-600 p-3 rounded-full"><i data-lucide="pie-chart"></i></div>
+                                    <div><h3 class="font-bold text-slate-800">穩健型</h3><p class="text-xs text-slate-500">可接受小幅波動，追求增值。</p></div>
+                                </button>
+                                <button onclick="setRisk('aggressive')" class="w-full p-5 rounded-2xl border-2 hover:border-orange-500 bg-white text-left flex items-center gap-4">
+                                    <div class="bg-orange-100 text-orange-600 p-3 rounded-full"><i data-lucide="trending-up"></i></div>
+                                    <div><h3 class="font-bold text-slate-800">積極型</h3><p class="text-xs text-slate-500">追求高報酬，心臟大顆。</p></div>
+                                </button>
+                            </div>
+                        ` : `
+                            <div class="bg-slate-800 text-white p-6 rounded-3xl shadow-xl mb-6 relative overflow-hidden zoom-in">
+                                <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="wallet" class="w-24 h-24"></i></div>
+                                <div class="mb-4">
+                                    <p class="text-slate-300 text-xs mb-1">距退休 ${inputs.retireAge - inputs.currentAge} 年，通膨係數 ${result.inflationFactor.toFixed(2)} 倍</p>
+                                    <p class="text-xs text-slate-400">(已扣除預估勞保 ${format(result.pension)}/月)</p>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="bg-red-500/20 border border-red-500/30 p-3 rounded-xl">
+                                        <div class="flex justify-between text-xs mb-1"><span class="text-red-200 font-bold flex gap-1"><i data-lucide="alert-triangle" class="w-3"></i> 1.生存級 (吃飯錢)</span><span class="text-slate-400">僅含餐費</span></div>
+                                        <div class="text-right text-2xl font-bold text-white">${format(Math.round(result.basic.totalGap/10000))} <span class="text-sm">萬</span></div>
+                                    </div>
+                                    <div class="bg-white/10 border border-white/10 p-3 rounded-xl">
+                                        <div class="flex justify-between text-xs mb-1"><span class="text-blue-200 font-bold">2.標準級 (一般)</span><span class="text-slate-400">+2萬/月</span></div>
+                                        <div class="text-right text-xl font-bold text-white">${format(Math.round(result.standard.totalGap/10000))} <span class="text-sm">萬</span></div>
+                                    </div>
+                                    <div class="bg-white/10 border border-white/10 p-3 rounded-xl opacity-80">
+                                        <div class="flex justify-between text-xs mb-1"><span class="text-amber-200 font-bold">3.優渥級 (享受)</span><span class="text-slate-400">+5萬/月</span></div>
+                                        <div class="text-right text-lg font-bold text-white">${format(Math.round(result.premium.totalGap/10000))} <span class="text-sm">萬</span></div>
+                                    </div>
+                                </div>
+                                ${result.foodGap > 0 ? `<div class="mt-3 text-xs text-red-300 font-bold bg-red-900/30 p-2 rounded">⚠️ 警告：連吃飯錢都有缺口 ${format(Math.round(result.foodGap/10000))} 萬！</div>` : ''}
+                            </div>
+                            <div class="border-l-4 pl-4 mb-4 ${risk==='conservative'?'border-blue-500':risk==='moderate'?'border-indigo-500':'border-orange-500'}">
+                                <h3 class="font-bold text-xl text-slate-800">${recommendations[risk].t}</h3>
+                                <p class="text-sm text-slate-600 mt-1">${recommendations[risk].d}</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex gap-4 items-center mb-6">
+                                <div class="${recommendations[risk].c} p-3 rounded-lg"><i data-lucide="check-circle-2"></i></div>
+                                <div><div class="text-xs text-slate-500 mb-1">推薦商品</div><h4 class="font-bold text-slate-800">${recommendations[risk].p}</h4></div>
+                            </div>
+                            <a href="${profile.lineLink}" target="_blank" class="block w-full bg-[#06C755] hover:bg-[#05b64d] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg"><i data-lucide="message-circle"></i> 索取建議書</a>
+                            <button onclick="setRetirementStep('input')" class="w-full text-center text-slate-400 mt-4 text-sm underline">重新試算</button>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+        function updateRetirement(field, value) { state.retirement.inputs[field] = parseFloat(value); }
+        function setRetirementStep(s) { state.retirement.step = s; render(); }
+        function setRisk(r) { state.retirement.risk = r; state.retirement.step = 'result'; render(); }
+
+        // (D) 彩虹數字 (全面升級版)
+        function renderRainbow() {
+            const { result } = state.rainbow;
+            const numberData = {
+                1: { 
+                    title: "開創者 (Leader)", 
+                    strength: "獨立自信、領導力強、勇於創新、行動力高",
+                    lesson: "學習謙虛，接納他人意見，避免太過自我中心，學習團隊合作。",
+                    weakness: "固執、急躁、好勝心強、容易給人壓力。",
+                    luckyColor: "紅色 (Red)",
+                    health: "心臟、血壓、眼睛、頭部。",
+                    work: "創業家、主管、業務主管、發明家。",
+                    match: "3, 5, 9",
+                    insurance: "【雇主責任險、高額壽險】", 
+                    desc: "您是天生的領導者，常一肩扛起責任，壽險保障是家人的依靠。若有創業，必備雇主責任險。" 
+                },
+                2: { 
+                    title: "協調者 (Peacemaker)", 
+                    strength: "敏感體貼、重視細節、善於分析、配合度高",
+                    lesson: "學習獨立，建立界線，不要太依賴他人評價，學會說「不」。",
+                    weakness: "優柔寡斷、依賴心重、情緒化、容易受傷。",
+                    luckyColor: "橙色 / 白色",
+                    health: "消化系統、淋巴、胸部、子宮。",
+                    work: "特助、秘書、護理師、社工、分析師。",
+                    match: "2, 4, 6, 8",
+                    insurance: "【醫療險、癌症險】", 
+                    desc: "您心思細膩，容易因壓力累積影響健康，醫療保障與癌症險要趁早規劃。" 
+                },
+                3: { 
+                    title: "藝術家 (Creative)", 
+                    strength: "樂觀創意、表達力強、社交活躍、充滿活力",
+                    lesson: "學習專注，情緒管理，不要太任性揮霍，對自己負責。",
+                    weakness: "任性散漫、容易浪費、缺乏耐性、八卦。",
+                    luckyColor: "黃色 (Yellow)",
+                    health: "喉嚨、肺部、皮膚、過敏。",
+                    work: "演藝人員、講師、設計師、銷售業務。",
+                    match: "1, 5, 7",
+                    insurance: "【投資型保單、儲蓄險】", 
+                    desc: "您生性樂觀愛享受，容易留不住錢，建議透過保單「強迫儲蓄」將創意變現存下來。" 
+                },
+                4: { 
+                    title: "建設者 (Builder)", 
+                    strength: "穩定務實、有組織力、邏輯強、值得信賴",
+                    lesson: "學習彈性，接受改變，放下固執與不安全感，嘗試新事物。",
+                    weakness: "缺乏安全感、不知變通、過於保守、計較。",
+                    luckyColor: "綠色 (Green)",
+                    health: "骨骼、牙齒、關節、胃。",
+                    work: "公務員、會計、建築師、工程師。",
+                    match: "2, 4, 8",
+                    insurance: "【長照險、年金險】", 
+                    desc: "您最重視安全感，穩定的退休現金流與長照險能讓您晚年無憂。" 
+                },
+                5: { 
+                    title: "冒險家 (Adventurer)", 
+                    strength: "熱愛自由、適應力強、口才好、多才多藝",
+                    lesson: "學習承諾與紀律，避免太過衝動，腳踏實地完成目標。",
+                    weakness: "博而不精、衝動、不喜受約束、投機。",
+                    luckyColor: "藍色 (Blue)",
+                    health: "呼吸系統、神經系統、手腳四肢。",
+                    work: "行銷、旅遊業、自由接案、大眾傳播。",
+                    match: "1, 3",
+                    insurance: "【意外險、旅平險】", 
+                    desc: "您熱愛冒險與變化，在外奔波機率高，高額意外防護與失能險不可少。" 
+                },
+                6: { 
+                    title: "關懷者 (Nurturer)", 
+                    strength: "充滿愛心、重視家庭、負責任、有正義感",
+                    lesson: "學習放下完美主義，不求回報的付出，先照顧好自己再照顧別人。",
+                    weakness: "愛管閒事、強迫他人、自我犧牲、情緒勒索。",
+                    luckyColor: "靛色 / 粉色",
+                    health: "心臟、血管、肩頸、生殖系統。",
+                    work: "教師、醫生、諮商師、服務業。",
+                    match: "2, 6, 9",
+                    insurance: "【家庭保單、重大傷病】", 
+                    desc: "您是家庭的支柱，重大傷病險能確保倒下時不拖累最愛的家人，這才是真負責。" 
+                },
+                7: { 
+                    title: "分析師 (Seeker)", 
+                    strength: "理智好學、直覺強、喜愛探究真理、有品味",
+                    lesson: "學習信任與開放，走出封閉世界，平衡理性與感性。",
+                    weakness: "孤僻冷漠、猜疑心重、逃避現實、神經質。",
+                    luckyColor: "紫色 (Violet)",
+                    health: "腦神經、失眠、精神焦慮。",
+                    work: "研究員、科學家、律師、命理師。",
+                    match: "3, 5",
+                    insurance: "【高端醫療、美元保單】", 
+                    desc: "您講求邏輯與品質，高端醫療能提供最尊榮的照護，美元保單有定理財累積。" 
+                },
+                8: { 
+                    title: "實業家 (Achiever)", 
+                    strength: "權威、執行力強、有商業頭腦、大器",
+                    lesson: "學習誠實與寬容，平衡物質與精神，不要太急功近利。",
+                    weakness: "霸道、物質主義、壓力大、投機。",
+                    luckyColor: "金色 / 黑色",
+                    health: "代謝系統、肝臟、腸胃。",
+                    work: "老闆、金融業、高階主管、政治家。",
+                    match: "2, 4, 8",
+                    insurance: "【資產傳承、稅務規劃】", 
+                    desc: "您擅長創造財富，重點在於「守財」與「傳承」，建議透過保險預留稅源與資產隔離。" 
+                },
+                9: { 
+                    title: "人道主義者 (Humanitarian)", 
+                    strength: "博愛無私、想像力豐富、有靈性、樂於助人",
+                    lesson: "學習落地執行，分辨幻想與現實，堅持原則。",
+                    weakness: "不切實際、沒原則、容易被利用、漫無目的。",
+                    luckyColor: "白色 (White)",
+                    health: "頭部、睡眠、免疫系統。",
+                    work: "志工、宗教家、藝術家、心理治療。",
+                    match: "1, 6",
+                    insurance: "【退休規劃、公益信託】", 
+                    desc: "您有大愛精神，但請先用年金把自己照顧好，行有餘力再透過保單指定受益人做公益。" 
+                }
+            };
+            
+            const getYearAdvice = (y) => {
+                const map = {
+                    1: "【播種期】適合展開新計劃，勇敢行動，但需獨立作業。",
+                    2: "【蟄伏期】適合合作與等待，以退為進，多傾聽他人。",
+                    3: "【破土期】發揮創意，社交活躍，但小心情緒化與口舌。",
+                    4: "【紮根期】辛苦耕耘，建立秩序，務實面對財務與工作。",
+                    5: "【開花期】變化多端，適合冒險、旅遊與嘗試新事物。",
+                    6: "【結果期】關懷家庭，承擔責任，處理健康與人際關係。",
+                    7: "【重整期】內省思考，進修學習，調整腳步，獨處沈澱。",
+                    8: "【收穫期】金錢與權力的高峰，檢視成果，小心投機風險。",
+                    9: "【完結期】斷捨離，總結過去，清除雜物，準備下個循環。"
+                };
+                return map[y] || "";
+            };
+
+            const getDayAdvice = (d) => {
+                const map = {
+                    1: "今天適合展開新計劃，主動出擊！",
+                    2: "今天適合與人合作，多傾聽少爭辯。",
+                    3: "今天適合發揮創意，去參加聚會吧！",
+                    4: "今天適合整理歸納，把工作收尾。",
+                    5: "今天適合變化與冒險，去嘗試新事物。",
+                    6: "今天適合關懷家人，買個小禮物回家。",
+                    7: "今天適合獨處進修，思考未來方向。",
+                    8: "今天適合處理財務，檢視投資績效。",
+                    9: "今天適合放下與斷捨離，幫助他人。"
+                };
+                return map[d] || "";
+            };
+
+            return `
+                <div class="min-h-screen bg-slate-50 slide-in">
+                    <div class="sticky top-0 bg-white/90 backdrop-blur-md border-b p-4 flex items-center gap-3 z-10 shadow-sm">
+                        <button onclick="navigate('home')" class="p-2 hover:bg-slate-100 rounded-full"><i data-lucide="arrow-left" class="text-slate-600"></i></button>
+                        <span class="font-bold text-slate-800">彩虹數字生命導航</span>
+                    </div>
+                    <div class="max-w-md mx-auto p-5 pb-24 text-center">
+                        ${!result ? `
+                            <div class="py-10">
+                                <div class="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center mb-6 mx-auto shadow-lg"><i data-lucide="sparkles" class="w-12 h-12 text-purple-600"></i></div>
+                                <h2 class="text-2xl font-bold text-slate-800 mb-2">探索生命密碼</h2>
+                                <p class="text-slate-500 mb-8 px-4">輸入生日，解鎖天賦優勢、流年運勢與專屬開運處方。</p>
+                                <div class="bg-white p-6 rounded-2xl shadow border border-slate-100">
+                                    <input type="date" id="bdate" class="w-full p-3 border-2 rounded-xl mb-4 bg-slate-50 text-lg outline-none focus:border-purple-500">
+                                    <button onclick="calcRainbow()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95">開始深度解析</button>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="animate-in zoom-in-95 duration-500">
+                                <div class="bg-white rounded-3xl shadow-xl overflow-hidden mb-6 border border-slate-100 text-left">
+                                    <div class="p-6 bg-purple-50 text-center">
+                                        <p class="text-slate-500 text-xs">您的專屬生命密碼</p>
+                                        <div class="text-6xl font-black text-purple-600 mb-2">${result.mainNum}</div>
+                                        <h3 class="text-2xl font-bold text-slate-800">${numberData[result.mainNum].title}</h3>
+                                    </div>
+                                    
+                                    <div class="bg-slate-800 text-white p-5 mx-4 -mt-4 mb-4 rounded-xl shadow-lg relative z-10">
+                                        <div class="flex justify-between items-center mb-2 border-b border-slate-600 pb-2">
+                                            <span class="text-xs text-slate-400">今年流年 (Year ${result.personalYear})</span>
+                                        </div>
+                                        <p class="text-sm font-medium mb-4 leading-relaxed text-white">${getYearAdvice(result.personalYear)}</p>
+                                        
+                                        <div class="flex justify-between items-center mb-2 border-b border-slate-600 pb-2">
+                                            <span class="text-xs text-slate-400">今日流日 (Day ${result.personalDay})</span>
+                                        </div>
+                                        <p class="text-sm text-yellow-400 font-medium">💡 ${getDayAdvice(result.personalDay)}</p>
+                                    </div>
+
+                                    <div class="p-5 space-y-4">
+                                        <div class="grid grid-cols-2 gap-3">
+                                             <div class="bg-slate-50 p-3 rounded-xl border border-slate-100"><h4 class="font-bold text-slate-800 text-xs mb-1 flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3 text-green-500"></i> 天賦長項</h4><p class="text-slate-600 text-xs leading-relaxed">${numberData[result.mainNum].strength}</p></div>
+                                             <div class="bg-red-50 p-3 rounded-xl border border-red-100"><h4 class="font-bold text-red-800 text-xs mb-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 text-red-500"></i> 留意事項</h4><p class="text-red-600 text-xs leading-relaxed">${numberData[result.mainNum].weakness}</p></div>
+                                        </div>
+                                        
+                                        <div class="bg-slate-50 p-3 rounded-xl border-l-4 border-purple-400">
+                                            <h4 class="font-bold text-slate-800 text-sm mb-1 flex items-center gap-1"><i data-lucide="book-open" class="w-4"></i> 人生課題</h4>
+                                            <p class="text-slate-600 text-sm leading-relaxed">${numberData[result.mainNum].lesson}</p>
+                                        </div>
+
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100"><h4 class="font-bold text-slate-800 text-xs mb-1">💼 適合行業</h4><p class="text-slate-600 text-xs">${numberData[result.mainNum].work}</p></div>
+                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100"><h4 class="font-bold text-slate-800 text-xs mb-1">🤝 貴人數字</h4><p class="text-purple-600 font-bold text-center mt-1 text-lg">${numberData[result.mainNum].match}</p></div>
+                                        </div>
+
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100"><h4 class="font-bold text-slate-800 text-xs mb-1">🍀 幸運顏色</h4><p class="text-slate-600 text-xs">${numberData[result.mainNum].luckyColor}</p></div>
+                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100"><h4 class="font-bold text-slate-800 text-xs mb-1">🏥 身體保養</h4><p class="text-slate-600 text-xs">${numberData[result.mainNum].health}</p></div>
+                                        </div>
+
+                                        <div class="bg-purple-50 p-4 rounded-xl border border-purple-200 mt-4 shadow-sm">
+                                            <h4 class="font-bold text-purple-700 text-sm flex items-center gap-1 mb-2"><i data-lucide="shield" class="w-4"></i> 專屬保險補強建議</h4>
+                                            <p class="font-bold text-slate-800 text-xs mb-1 bg-white inline-block px-2 py-1 rounded border border-purple-100">${numberData[result.mainNum].insurance}</p>
+                                            <p class="text-slate-600 text-xs leading-relaxed mt-2 text-justify">${numberData[result.mainNum].insDesc}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="${profile.lineLink}" target="_blank" class="block w-full bg-[#06C755] text-white py-4 rounded-xl font-bold text-lg shadow-lg mb-3 hover:bg-[#05b64d] transition-colors text-center">與處經理討論我的 ${result.mainNum} 號人生</a>
+                                <button onclick="state.rainbow.result=null;render()" class="w-full bg-white border border-slate-200 text-slate-500 py-3 rounded-xl font-bold hover:bg-slate-50 transition-colors">重新計算</button>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        function calcRainbow() {
+            const val = document.getElementById('bdate').value;
+            if(!val) return;
+            const d = new Date(val);
+            const reduce = (n) => {
+                while(n > 9 && n!==11 && n!==22 && n!==33) n = n.toString().split('').reduce((a,b)=>parseInt(a)+parseInt(b),0);
+                if(n>9) n = n.toString().split('').reduce((a,b)=>parseInt(a)+parseInt(b),0);
+                return n;
+            };
+            const mainNum = reduce(d.getFullYear() + d.getMonth()+1 + d.getDate());
+            
+            // 計算流年流日 (以當前年份計算)
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const pYear = reduce(currentYear + (d.getMonth()+1) + d.getDate());
+            const pMonth = reduce(pYear + (today.getMonth()+1));
+            const pDay = reduce(pMonth + today.getDate());
+            
+            state.rainbow.result = { mainNum, personalYear: pYear, personalDay: pDay };
+            render();
+        }
+
+        // --- 以下組件保持原樣 ---
+        function renderEnterprise() {
+            const { topic } = state.enterprise;
+            const topics = [{ id: 'fire', title: '商業火險', icon: 'flame', color: 'text-orange-600' }, { id: 'public', title: '公共意外', icon: 'users', color: 'text-blue-600' }, { id: 'employer', title: '雇主責任', icon: 'briefcase', color: 'text-indigo-600' }, { id: 'home_fire', title: '住宅火險', icon: 'home', color: 'text-red-600' }, { id: 'travel', title: '旅平險', icon: 'plane', color: 'text-sky-600' }];
+            const curr = {fire:{t:"商業火災保險",s:"企業資產保命符",i:["銀行貸款必要","營業中斷損失","延燒責任"]}, public:{t:"公共意外責任險",s:"開店必備",i:["法規強制","不可控意外"]}, employer:{t:"雇主補償責任險",s:"老闆的防彈衣",i:["補足勞保不足","抵充雇主責任"]}, home_fire:{t:"住宅火險+地震",s:"守護溫暖的家",i:["足額投保","動產也要保"]}, travel:{t:"旅行平安險",s:"快樂出門平安回家",i:["海外高額醫療","突發疾病門診"]}}[topic] || {t:"保險防護",s:"",i:[]};
+            return `<div class="min-h-screen bg-slate-50 slide-in"><div class="sticky top-0 bg-white/90 backdrop-blur-md border-b p-4 flex items-center gap-3 z-10 shadow-sm"><button onclick="navigate('home')" class="p-2 hover:bg-slate-100 rounded-full"><i data-lucide="arrow-left" class="text-slate-600"></i></button><span class="font-bold text-slate-800 text-lg">全方位產物防護</span></div><div class="bg-white border-b py-3 px-4 overflow-x-auto whitespace-nowrap scrollbar-hide sticky top-[73px] z-10"><div class="flex gap-3">${topics.map(t => `<button onclick="setEnterpriseTopic('${t.id}')" class="flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${topic === t.id ? 'bg-slate-800 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-500'}"><i data-lucide="${t.icon}" class="w-4 h-4"></i> <span class="text-sm">${t.title}</span></button>`).join('')}</div></div><div class="p-5 pb-24"><div class="rounded-2xl p-6 mb-6 shadow-sm border-2 bg-white"><h2 class="text-2xl font-bold text-slate-800 mb-1">${curr.t}</h2><p class="text-slate-600 font-medium">${curr.s}</p></div><a href="${profile.lineLink}" target="_blank" class="block w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-lg shadow-lg text-center mt-8">預約免費諮詢</a></div></div>`;
+        }
+        function setEnterpriseTopic(t) { state.enterprise.topic = t; render(); }
+        
+        function renderVideo() { return `<div class="min-h-screen bg-slate-900 text-slate-100 relative slide-in"><div class="sticky top-0 bg-slate-900/90 backdrop-blur-md border-b border-slate-700 p-4 flex items-center gap-3 z-10"><button onclick="navigate('home')" class="p-2 hover:bg-slate-800 rounded-full"><i data-lucide="arrow-left" class="text-slate-300"></i></button><span class="font-bold">感人保險影院</span></div><div class="p-5 pb-24 space-y-6">${[{t:"爸爸給女兒的一封信", id:"osKx1pdNHAw"},{t:"無聲的愛", id:"uyayCHjcvk8"}].map(v => `<div class="bg-slate-800 rounded-2xl overflow-hidden shadow-xl border border-slate-700"><div class="aspect-video"><iframe class="w-full h-full" src="https://www.youtube.com/embed/${v.id}" allowfullscreen></iframe></div><div class="p-4"><h3 class="font-bold text-white text-lg">${v.t}</h3></div></div>`).join('')}</div></div>`; }
+        function renderPhoto() { return `<div class="min-h-screen bg-slate-900 text-white slide-in"><div class="p-4 text-center"><button onclick="navigate('home')" class="float-left p-2 rounded-full"><i data-lucide="arrow-left"></i></button><div class="clear-both"></div><h2 class="text-2xl font-bold mt-10">AI 拍照健診</h2><div class="mt-8 border-2 border-dashed border-slate-700 rounded-xl h-64 flex items-center justify-center"><p class="text-slate-500">相機模組準備中...</p></div><a href="${profile.lineLink}" target="_blank" class="block w-full bg-blue-600 text-white px-6 py-4 rounded-xl font-bold text-lg shadow-lg mt-8">傳送照片給處經理</a></div></div>`; }
+        function renderCarSOS() { return `<div class="min-h-screen bg-slate-50 slide-in"><div class="sticky top-0 bg-white/90 backdrop-blur-md border-b p-4 flex items-center gap-3 z-10"><button onclick="navigate('home')" class="p-2 hover:bg-slate-100 rounded-full"><i data-lucide="arrow-left" class="text-slate-600"></i></button><span class="font-bold text-slate-800">車禍理賠助手</span></div><div class="p-5"><img src="./image_25fb09.jpg" class="w-full rounded-xl shadow-md mb-6" onerror="this.style.display='none'"><a href="${profile.lineLink}" target="_blank" class="block w-full bg-red-500 text-white text-center py-4 rounded-xl font-bold shadow-lg">緊急聯絡處經理</a></div></div>`; }
+        function renderThreeKingdoms() { return `<div class="min-h-screen bg-stone-100 slide-in"><div class="sticky top-0 bg-stone-100/90 backdrop-blur-md border-b border-stone-200 p-4 flex items-center gap-3 z-10"><button onclick="navigate('home')" class="p-2 hover:bg-stone-200 rounded-full"><i data-lucide="arrow-left" class="text-stone-600"></i></button><span class="font-bold text-stone-800">三國智慧談保險</span></div><div class="p-5"><img src="./26088.jpg" class="w-full rounded-xl shadow-md mb-6" onerror="this.style.display='none'"><div class="space-y-3"><div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200"><h3 class="font-bold text-lg text-stone-800">劉備 - 資產傳承</h3><p class="text-sm text-stone-500">白帝城託孤，信託規劃很重要。</p></div><div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200"><h3 class="font-bold text-lg text-stone-800">關羽 - 意外風險</h3><p class="text-sm text-stone-500">大意失荊州，意外險留愛不留債。</p></div></div></div></div>`; }
+
+        // --- 導航邏輯 ---
+        function navigate(view) {
+            if (view === 'recruit') openRecruitModal();
+            else { state.currentView = view; render(); }
+        }
+        function openRecruitModal() {
+            document.getElementById('modal-content').innerHTML = `<div class="p-5 bg-slate-800 text-white"><h3 class="font-bold text-lg">創業導師招募</h3></div><div class="p-6"><p class="text-slate-600 mb-4">跟著處經理一起創業！</p><div class="space-y-2 mb-4">${["太陽保經高佣金制度解析", "不用打卡、時間自由", "一對一導師教學", "AI 系統自動化開發"].map(d=>`<div class="flex gap-2 text-sm text-slate-700"><i data-lucide="check-circle-2" class="text-amber-500 w-4"></i> ${d}</div>`).join('')}</div><a href="${profile.lineLink}" target="_blank" class="block w-full bg-slate-900 text-white py-3 rounded-xl text-center font-bold">了解詳情</a></div>`;
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+
+        // 啟動
+        render();
+
+    </script>
+</body>
+</html>
