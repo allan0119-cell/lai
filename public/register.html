@@ -128,15 +128,9 @@
     </div>
     <p class="form-help" id="parishHelp">請先選擇教區,系統會列出該教區可選堂區。</p>
 
-    <label>所屬善會 <span class="hint">可複選</span></label>
-    <div class="check-group" id="ministryGroup">
-      <label class="check-item"><input type="checkbox" name="所屬善會" value="慈幼會"><span>慈幼會</span></label>
-      <label class="check-item"><input type="checkbox" name="所屬善會" value="聖母軍"><span>聖母軍</span></label>
-      <label class="check-item"><input type="checkbox" name="所屬善會" value="基督活力運動"><span>基督活力運動</span></label>
-      <label class="check-item"><input type="checkbox" name="所屬善會" value="禮儀組"><span>禮儀組</span></label>
-      <label class="check-item"><input type="checkbox" name="所屬善會" value="讀經班"><span>讀經班</span></label>
-      <label class="check-item"><input type="checkbox" name="所屬善會" value="青年會"><span>青年會</span></label>
-    </div>
+    <label>所屬善會 <span class="hint">自由填寫</span></label>
+    <input name="所屬善會文字" placeholder="例如:慈幼會、聖母軍、基督活力運動、禮儀組">
+    <p class="form-help">參考範例:慈幼會、聖母軍、基督活力運動、禮儀組、讀經班、青年會。若沒有參加善會可留空。</p>
   </div>
 
   <!-- 服務意願 -->
@@ -342,11 +336,10 @@ document.getElementById('form').addEventListener('submit', async (e) => {
 
   const fd = new FormData(e.target);
   const data = {};
-  ['姓名','英文名','性別','出生年份','手機','Email','所屬教區','居住地區','信仰背景簡述','備註']
+  ['姓名','英文名','性別','出生年份','手機','Email','所屬教區','所屬善會文字','居住地區','信仰背景簡述','備註']
     .forEach(k => { const v = fd.get(k); if (v) data[k] = v; });
   if (data['出生年份']) data['出生年份'] = parseInt(data['出生年份'], 10);
 
-  data['所屬善會'] = fd.getAll('所屬善會');
   data['可服務區域'] = fd.getAll('可服務區域');
   data['可服務時段'] = fd.getAll('可服務時段');
   data['是否願意接受邀請'] = !!fd.get('是否願意接受邀請');

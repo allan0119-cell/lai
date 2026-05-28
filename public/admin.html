@@ -257,7 +257,7 @@ async function viewDetail(id) {
               <div class="info-row"><span class="label">狀態</span><span class="val">${ui.badge(p['狀態']||'待審核')}</span></div>
               <div class="info-row"><span class="label">願意邀請</span><span class="val">${p['是否願意接受邀請']?ui.badge('願意'):ui.badge('否')}</span></div>
               <div class="info-row"><span class="label">可服務時段</span><span class="val">${(p['可服務時段']||[]).map(t=>`<span class="chip">${t}</span>`).join('')||'—'}</span></div>
-              <div class="info-row"><span class="label">所屬善會</span><span class="val">${(p['所屬善會']||[]).map(t=>`<span class="chip">${t}</span>`).join('')||'—'}</span></div>
+              <div class="info-row"><span class="label">所屬善會</span><span class="val">${escape(p['所屬善會文字']||'') || (p['所屬善會']||[]).map(t=>`<span class="chip">${t}</span>`).join('') || '—'}</span></div>
               <div class="info-row"><span class="label">備註</span><span class="val">${escape(p['備註']||'—')}</span></div>
             </div>
 

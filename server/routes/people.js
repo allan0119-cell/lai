@@ -212,6 +212,7 @@ function buildSafePersonFields(fields, body, includeNote) {
       fields['備註'],
       fields['所屬教區'] ? `所屬教區:${fields['所屬教區']}` : '',
       body['所屬堂區文字'] ? `所屬堂區:${body['所屬堂區文字']}` : '',
+      fields['所屬善會文字'] ? `所屬善會:${fields['所屬善會文字']}` : '',
       Array.isArray(fields['所屬善會']) && fields['所屬善會'].length ? `所屬善會:${fields['所屬善會'].join('、')}` : '',
       fields['居住地區'] ? `居住地區:${fields['居住地區']}` : '',
       Array.isArray(fields['可服務區域']) && fields['可服務區域'].length ? `可服務區域:${fields['可服務區域'].join('、')}` : '',
@@ -285,7 +286,7 @@ async function findOrCreateParish(parishName) {
 function sanitizePersonFields(body) {
   const allowed = [
     '姓名', '英文名', '性別', '出生年份', '手機', 'Email',
-    '所屬教區', '所屬堂區', '所屬善會', '居住地區', '可服務區域',
+    '所屬教區', '所屬堂區', '所屬善會文字', '所屬善會', '居住地區', '可服務區域',
     '可服務時段', '是否願意接受邀請', '信仰背景簡述', '備註',
   ];
   const out = {};
