@@ -41,6 +41,18 @@ function formatRecord(record) {
   return { id: record.id, ...record.fields };
 }
 
+function cleanSelectOptions(options = {}) {
+  const cleaned = { pageSize: 100 };
+
+  for (const [key, value] of Object.entries(options)) {
+    if (value === undefined || value === null) continue;
+    if (key === 'filterByFormula' && value === '') continue;
+    cleaned[key] = value;
+  }
+
+  return cleaned;
+}
+
 /**
  * 列出資料(自動分頁)
  * @param {string} tableName
@@ -50,7 +62,7 @@ async function listRecords(tableName, options = {}) {
   ensureBase();
   const records = [];
   await base(tableName)
-    .select({ pageSize: 100, ...options })
+    .select(cleanSelectOptions(options))
     .eachPage((pageRecords, fetchNextPage) => {
       records.push(...pageRecords.map(formatRecord));
       fetchNextPage();
