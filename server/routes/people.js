@@ -182,16 +182,35 @@ async function resolveParishLink(body) {
   const parishName = String(value).trim();
   if (!parishName) return;
 
+  try {
+    const parish = await findOrCreateParish(parishName);
+    if (parish && parish.id) {
+      body['所屬堂區'] = [parish.id];
+      return;
+    }
+  } catch (err) {
+    console.warn('[parish resolve] failed:', err.message);
+  }
+
+  // 堂區連結失敗時,不要阻止人才登錄;保留文字供管理者後續整理。
+  const parishNote = body['所屬教區']
+    ? `所屬教區/堂區:${body['所屬教區']} / ${parishName}`
+    : `所屬堂區:${parishName}`;
+  body['備註'] = body['備註'] ? `${body['備註']}\n${parishNote}` : parishNote;
+  delete body['所屬堂區'];
+}
+
+async function findOrCreateParish(parishName) {
   const formula = at.buildFilterFormula({ '堂區名稱': parishName });
   const existing = await at.listRecords(at.TABLES.PARISHES, {
     filterByFormula: formula,
     maxRecords: 1,
   });
-  const parish = existing[0] || await at.createRecord(at.TABLES.PARISHES, {
+  if (existing[0]) return existing[0];
+
+  return at.createRecord(at.TABLES.PARISHES, {
     '堂區名稱': parishName,
-    '備註': body['所屬教區'] ? `由人才登錄自動建立:${body['所屬教區']}` : '由人才登錄自動建立',
   });
-  body['所屬堂區'] = [parish.id];
 }
 
 function sanitizePersonFields(body) {
