@@ -41,7 +41,7 @@ router.post('/', async (req, res, next) => {
     fields['建立日期'] = new Date().toISOString();
     fields['更新日期'] = new Date().toISOString();
 
-    const record = await at.createRecord(at.TABLES.PEOPLE, fields);
+    const record = await createPersonRecord(fields, body);
 
     // --- 順手把自由填寫的專長標準化、寫入 People_Skills ---
     if (Array.isArray(body.freeSkills) && body.freeSkills.length > 0) {
@@ -175,12 +175,76 @@ router.get('/:id/self-update-link', requireAdmin, async (req, res, next) => {
 });
 
 // --- helper ---
+async function createPersonRecord(fields, body) {
+  const attempts = [
+    { name: 'full', fields },
+    { name: 'safe-note', fields: buildSafePersonFields(fields, body, true) },
+    { name: 'safe', fields: buildSafePersonFields(fields, body, false) },
+    { name: 'minimal', fields: pickFields(fields, ['姓名', '手機']) },
+  ];
+  let lastErr;
+
+  for (const attempt of attempts) {
+    if (!attempt.fields['姓名'] || !attempt.fields['手機']) continue;
+    try {
+      return await at.createRecord(at.TABLES.PEOPLE, attempt.fields);
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[people create:${attempt.name}] failed:`, describeAirtableError(err));
+    }
+  }
+
+  const err = new Error(`人才資料寫入失敗:${describeAirtableError(lastErr)}`);
+  err.status = 500;
+  err.expose = true;
+  throw err;
+}
+
+function buildSafePersonFields(fields, body, includeNote) {
+  const safe = pickFields(fields, ['姓名', '手機', 'Email']);
+  if (includeNote) {
+    const notes = [
+      fields['備註'],
+      fields['所屬教區'] ? `所屬教區:${fields['所屬教區']}` : '',
+      body['所屬堂區文字'] ? `所屬堂區:${body['所屬堂區文字']}` : '',
+      Array.isArray(fields['所屬善會']) && fields['所屬善會'].length ? `所屬善會:${fields['所屬善會'].join('、')}` : '',
+      fields['居住地區'] ? `居住地區:${fields['居住地區']}` : '',
+      Array.isArray(fields['可服務區域']) && fields['可服務區域'].length ? `可服務區域:${fields['可服務區域'].join('、')}` : '',
+      Array.isArray(fields['可服務時段']) && fields['可服務時段'].length ? `可服務時段:${fields['可服務時段'].join('、')}` : '',
+      fields['信仰背景簡述'] ? `信仰背景簡述:${fields['信仰背景簡述']}` : '',
+    ].filter(Boolean);
+    if (notes.length) safe['備註'] = notes.join('\n');
+  }
+  return safe;
+}
+
+function pickFields(fields, names) {
+  const out = {};
+  for (const name of names) {
+    if (fields[name] !== undefined && fields[name] !== null && fields[name] !== '') {
+      out[name] = fields[name];
+    }
+  }
+  return out;
+}
+
+function describeAirtableError(err) {
+  if (!err) return '未知錯誤';
+  const parts = [
+    err.statusCode || err.status,
+    err.error,
+    err.message,
+  ].filter(Boolean);
+  return parts.join(' ') || String(err);
+}
+
 async function resolveParishLink(body) {
   const value = Array.isArray(body['所屬堂區']) ? body['所屬堂區'][0] : body['所屬堂區'];
   if (!value || String(value).startsWith('rec')) return;
 
   const parishName = String(value).trim();
   if (!parishName) return;
+  body['所屬堂區文字'] = parishName;
 
   try {
     const parish = await findOrCreateParish(parishName);

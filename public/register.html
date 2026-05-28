@@ -352,7 +352,13 @@ document.getElementById('form').addEventListener('submit', async (e) => {
   data['是否願意接受邀請'] = !!fd.get('是否願意接受邀請');
 
   const parish = fd.get('所屬堂區');
-  if (parish) data['所屬堂區'] = [parish];
+  if (parish) {
+    data['所屬堂區'] = [parish];
+    const selectedParish = document.getElementById('parishSelect').selectedOptions[0];
+    if (selectedParish) {
+      data['所屬堂區文字'] = selectedParish.dataset.parishName || selectedParish.textContent.trim();
+    }
+  }
 
   data.consent = document.getElementById('consent').checked;
   const free = document.getElementById('freeSkills').value
