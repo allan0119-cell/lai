@@ -23,7 +23,3 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
-      - key: ADMIN_PASSWORD_HASH
-        sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
