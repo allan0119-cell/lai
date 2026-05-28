@@ -2,6 +2,7 @@ services:
   - type: web
     name: catholic-talent-platform
     runtime: node
+    branch: catholic-talent-platform-render
     region: singapore
     plan: free
     buildCommand: npm install
