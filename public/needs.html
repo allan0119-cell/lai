@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>單位需求申請 · 愛德人才服務平台</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .intro {
+    background: linear-gradient(135deg, var(--gold-50) 0%, var(--primary-50) 100%);
+    border: 1px solid var(--gold-100);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .intro h2 {
+    border: none; padding: 0; margin: 0 0 0.5rem;
+    color: var(--gold-600); font-size: 1.125rem;
+  }
+  .intro h2::before { display: none; }
+  .intro p { color: var(--text-soft); margin: 0; font-size: 0.92rem; }
+
+  .section-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    background: var(--gold-400);
+    color: white;
+    border-radius: 50%;
+    font-family: var(--font-serif);
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h2 .section-num { margin-right: 0.25rem; }
+  .card h2::before { display: none; }
+
+  .urgency-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+  }
+  .urgency-grid label {
+    margin: 0;
+    padding: 0.625rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--bg-card);
+    font-size: 0.85rem;
+    user-select: none;
+  }
+  .urgency-grid label:hover { border-color: var(--primary-300); }
+  .urgency-grid label input { display: none; }
+  .urgency-grid label:has(input:checked) {
+    background: var(--primary-50);
+    border-color: var(--primary-500);
+    color: var(--primary-700);
+    font-weight: 600;
+  }
+  .urgency-grid label.urgent:has(input:checked) {
+    background: var(--error-bg);
+    border-color: var(--error);
+    color: var(--error);
+  }
+  .consent-box {
+    background: var(--bg-soft);
+    border-left: 3px solid var(--gold-400);
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius);
+    margin: 1rem 0;
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+  .consent-box strong {
+    display: block;
+    color: var(--gold-600);
+    margin-bottom: 0.5rem;
+    font-family: var(--font-serif);
+  }
+  .consent-box .check-item { margin-top: 0.875rem; background: white; }
+</style>
+</head>
+<body>
+
+<div class="container container-narrow">
+
+<div class="intro">
+  <h2>提交服務需求</h2>
+  <p>請填寫活動詳情,系統會自動為您推薦合適的服務人選,管理者也會即時通知您。</p>
+</div>
+
+<div id="flash"></div>
+
+<form id="form">
+  <!-- 申請資訊 -->
+  <div class="card">
+    <h2><span class="section-num">1</span> 申請單位資訊</h2>
+    <div class="form-grid">
+      <div>
+        <label>需求單位 <span class="required">*</span></label>
+        <input name="需求單位" required placeholder="如:聖家堂、牧靈福傳處">
+      </div>
+      <div>
+        <label>申請人 <span class="required">*</span></label>
+        <input name="申請人" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>聯絡方式 <span class="hint">電話或 Email</span></label>
+      <input name="聯絡方式" placeholder="0912345678 或 contact@parish.org">
+    </div>
+  </div>
+
+  <!-- 活動資訊 -->
+  <div class="card">
+    <h2><span class="section-num">2</span> 活動資訊</h2>
+
+    <div class="form-row">
+      <label>活動名稱 <span class="required">*</span></label>
+      <input name="活動名稱" required placeholder="例如:聖誕子夜彌撒禮儀服務">
+    </div>
+
+    <div class="form-grid">
+      <div>
+        <label>活動日期 <span class="required">*</span></label>
+        <input type="date" name="活動日期" required>
+      </div>
+      <div>
+        <label>所需人數</label>
+        <input type="number" name="所需人數" min="1" value="1">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>地點</label>
+      <input name="地點" placeholder="例如:台中市東區大智路150號 主教座堂">
+    </div>
+
+    <div class="form-row">
+      <label>急迫程度</label>
+      <div class="urgency-grid">
+        <label><input type="radio" name="急迫程度" value="低">低</label>
+        <label><input type="radio" name="急迫程度" value="中" checked>中</label>
+        <label><input type="radio" name="急迫程度" value="高">高</label>
+        <label class="urgent"><input type="radio" name="急迫程度" value="急">急</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- 需求條件 -->
+  <div class="card">
+    <h2><span class="section-num">3</span> 服務需求</h2>
+
+    <div class="form-row">
+      <label>所需專長 <span class="hint">可複選</span></label>
+      <div class="check-group" id="skills"><span class="muted">載入中…</span></div>
+    </div>
+
+    <div class="form-row">
+      <label>服務時段 <span class="hint">可複選</span></label>
+      <div class="check-group">
+        <label class="check-item"><input type="checkbox" name="服務時段" value="平日上午"><span>平日上午</span></label>
+        <label class="check-item"><input type="checkbox" name="服務時段" value="平日下午"><span>平日下午</span></label>
+        <label class="check-item"><input type="checkbox" name="服務時段" value="平日晚上"><span>平日晚上</span></label>
+        <label class="check-item"><input type="checkbox" name="服務時段" value="週六"><span>週六</span></label>
+        <label class="check-item"><input type="checkbox" name="服務時段" value="主日"><span>主日</span></label>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>條件 / 期望 <span class="hint">選填</span></label>
+      <textarea name="條件" rows="3" placeholder="例如:能用台語講道、女性優先、需自備樂器"></textarea>
+    </div>
+
+    <div class="form-row">
+      <label>備註</label>
+      <textarea name="備註" rows="3" placeholder="其他想讓媒合管理者了解的資訊"></textarea>
+    </div>
+  </div>
+
+  <!-- 同意 -->
+  <div class="card">
+    <div class="consent-box">
+      <strong>資料使用聲明</strong>
+      您所提供的需求資訊將供本平台管理者用於媒合作業,並可能轉知潛在志工。請勿在備註中
+      填寫第三人個資。送出後系統會自動為您找尋合適人選。
+      <label class="check-item">
+        <input type="checkbox" id="consent" required>
+        <span>我已閱讀並同意上述聲明</span>
+      </label>
+    </div>
+
+    <button type="submit" id="submitBtn" class="btn-block btn-lg btn-gold">
+      <span id="submitText">送出需求</span>
+    </button>
+    <p class="muted text-center mt-2" style="font-size:0.825rem;">
+      送出後管理者通常於 1-2 個工作天內回覆媒合進度。
+    </p>
+  </div>
+</form>
+
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+(async function() {
+  document.body.insertAdjacentHTML('afterbegin', `<header class="site-header">
+    <h1><span class="logo-mark">${ui.icon('cross', 16)}</span><span>單位需求申請</span></h1>
+    <nav><a href="/index.html">${ui.icon('home')}回首頁</a></nav>
+  </header>`);
+  document.body.insertAdjacentHTML('beforeend', ui.renderFooter());
+
+  try {
+    const { records } = await api.get('/api/skills');
+    if (!records.length) {
+      document.getElementById('skills').innerHTML = '<span class="muted">尚無標準專長,請於條件欄位描述</span>';
+    } else {
+      document.getElementById('skills').innerHTML = records.map(s =>
+        `<label class="check-item"><input type="checkbox" name="skill" value="${s.id}"><span>${s['專長名稱']}</span></label>`
+      ).join('');
+    }
+  } catch (e) {
+    document.getElementById('skills').innerHTML = '<span class="muted">技能字典載入失敗</span>';
+  }
+})();
+
+document.getElementById('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const txt = document.getElementById('submitText');
+  btn.disabled = true;
+  txt.innerHTML = '<span class="spinner" style="border-color:rgba(255,255,255,.3);border-top-color:white"></span> 送出中…';
+
+  const fd = new FormData(e.target);
+  const data = {};
+  ['需求單位','申請人','聯絡方式','活動名稱','活動日期','地點','條件','備註','急迫程度']
+    .forEach(k => { const v = fd.get(k); if (v) data[k] = v; });
+  if (fd.get('所需人數')) data['所需人數'] = parseInt(fd.get('所需人數'), 10);
+  data['服務時段'] = fd.getAll('服務時段');
+  data['所需專長'] = fd.getAll('skill');
+  data.consent = document.getElementById('consent').checked;
+
+  try {
+    await api.post('/api/needs', data);
+    ui.toast('需求已送出', 'success');
+    document.querySelector('.container').innerHTML = `
+      <div class="card text-center" style="padding:3rem 1.5rem;">
+        <div style="width:72px;height:72px;background:var(--success-bg);color:var(--success);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+          ${ui.icon('check', 36)}
+        </div>
+        <h2 style="border:none;padding:0;justify-content:center;">需求已成功送出</h2>
+        <p class="muted mb-2">系統正在為您搜尋合適的服務人選,管理者會盡速處理。</p>
+        <a href="/index.html" class="btn">返回首頁</a>
+      </div>`;
+  } catch (err) {
+    ui.toast(err.message, 'error');
+    btn.disabled = false;
+    txt.textContent = '送出需求';
+  }
+});
+</script>
+</body>
+</html>

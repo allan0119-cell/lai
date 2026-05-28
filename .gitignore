@@ -1,0 +1,18 @@
+# 套件(部署平台會自己重裝,不用上傳)
+node_modules/
+
+# 機密設定檔(絕對不能上傳!密碼、Token 都在裡面)
+.env
+.env.local
+.env.*.local
+
+# 系統與編輯器雜檔
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+
+# 測試用的暫存
+coverage/

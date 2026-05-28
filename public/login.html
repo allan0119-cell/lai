@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>管理者登入 · 愛德人才服務平台</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background:
+      radial-gradient(ellipse at top, var(--primary-50) 0%, transparent 60%),
+      radial-gradient(ellipse at bottom, var(--gold-50) 0%, transparent 60%),
+      var(--bg);
+  }
+  .login-wrap {
+    width: 100%;
+    max-width: 400px;
+  }
+  .login-logo {
+    text-align: center;
+    margin-bottom: 1.75rem;
+  }
+  .login-logo .mark {
+    width: 56px; height: 56px;
+    margin: 0 auto 1rem;
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold-200);
+    box-shadow: var(--shadow-lg);
+  }
+  .login-logo h1 {
+    font-size: 1.375rem;
+    color: var(--primary-700);
+    margin-bottom: 0.25rem;
+  }
+  .login-logo p { color: var(--muted); font-size: 0.875rem; margin: 0; }
+
+  .login-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+  }
+  .back-home {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.85rem;
+  }
+  .back-home a { color: var(--muted); }
+  .back-home a:hover { color: var(--primary-600); }
+</style>
+</head>
+<body>
+
+<div class="login-wrap">
+  <div class="login-logo">
+    <div class="mark">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M14 4h-4v6H4v4h6v6h4v-6h6v-4h-6V4z"/></svg>
+    </div>
+    <h1>管理者登入</h1>
+    <p>愛德人才服務平台</p>
+  </div>
+
+  <div class="login-card">
+    <div id="flash"></div>
+
+    <form onsubmit="doLogin(event)">
+      <div class="form-row">
+        <label for="username">帳號</label>
+        <input id="username" type="text" autocomplete="username" required autofocus placeholder="請輸入管理者帳號">
+      </div>
+      <div class="form-row">
+        <label for="password">密碼</label>
+        <input id="password" type="password" autocomplete="current-password" required placeholder="請輸入密碼">
+      </div>
+      <button type="submit" class="btn-block btn-lg" id="loginBtn">
+        <span id="loginText">登入</span>
+      </button>
+    </form>
+  </div>
+
+  <div class="back-home">
+    <a href="/index.html">← 返回首頁</a>
+  </div>
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+async function doLogin(e) {
+  e.preventDefault();
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  const btn = document.getElementById('loginBtn');
+  const txt = document.getElementById('loginText');
+
+  btn.disabled = true;
+  txt.innerHTML = '<span class="spinner" style="border-color:rgba(255,255,255,.3);border-top-color:white"></span> 驗證中…';
+
+  try {
+    await auth.login(u, p);
+    ui.toast('登入成功', 'success');
+    const params = new URLSearchParams(location.search);
+    const redirect = params.get('redirect') || '/admin.html';
+    setTimeout(() => location.href = redirect, 400);
+  } catch (err) {
+    ui.alert(err.message || '登入失敗,請確認帳號密碼', 'error');
+    btn.disabled = false;
+    txt.textContent = '登入';
+  }
+}
+</script>
+</body>
+</html>

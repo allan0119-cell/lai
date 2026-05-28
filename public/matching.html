@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>人才媒合 · 管理後台</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .score-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 80px;
+  }
+  .score-bar .num {
+    font-family: var(--font-serif);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--primary-600);
+    min-width: 30px;
+    text-align: right;
+  }
+  .score-bar .track {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-soft);
+    border-radius: 3px;
+    overflow: hidden;
+    min-width: 50px;
+  }
+  .score-bar .fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-400), var(--primary-500));
+    border-radius: 3px;
+    transition: width 400ms;
+  }
+  .score-bar.high .num { color: var(--success); }
+  .score-bar.high .fill { background: linear-gradient(90deg, var(--success), #4a6a45); }
+  .score-bar.low .num { color: var(--muted); }
+  .score-bar.low .fill { background: var(--muted-2); }
+  .breakdown {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+  }
+  .breakdown .pill {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    background: var(--bg-soft);
+    color: var(--muted);
+    border-radius: 999px;
+  }
+  .reason-cell {
+    max-width: 220px;
+    font-size: 0.825rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .need-summary {
+    background: linear-gradient(135deg, var(--primary-50) 0%, var(--gold-50) 100%);
+    border: 1px solid var(--primary-100);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .need-summary h2 {
+    border: none; padding: 0; margin: 0 0 0.5rem;
+    color: var(--primary-700);
+  }
+  .need-summary h2::before { display: none; }
+  .need-summary .meta {
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    color: var(--text-soft);
+    font-size: 0.875rem;
+  }
+  .need-summary .meta span strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(45, 42, 38, 0.6);
+    z-index: 9990;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: slideIn 200ms;
+  }
+  .modal {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    max-width: 560px;
+    width: 100%;
+  }
+  .modal-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-header h2 { margin: 0; border: none; padding: 0; font-size: 1.1rem; }
+  .modal-header h2::before { display: none; }
+  .modal-body { padding: 1.25rem; }
+  .modal .close-btn {
+    background: none; color: var(--muted);
+    padding: 0.25rem; min-height: auto;
+    border-radius: 50%; width: 32px; height: 32px;
+  }
+  .modal .close-btn:hover { background: var(--bg-soft); color: var(--text); transform: none; }
+</style>
+</head>
+<body>
+
+<div class="container container-wide">
+<div id="flash"></div>
+
+<div class="card">
+  <h2>選擇需求單</h2>
+  <select id="needSelect" onchange="loadRecommend()">
+    <option value="">載入中…</option>
+  </select>
+</div>
+
+<div id="needInfo" style="display:none"></div>
+
+<div class="card" id="recCard" style="display:none">
+  <div class="result-meta">
+    <h2 style="margin-bottom:0">推薦人選</h2>
+    <span class="muted" id="recCount"></span>
+  </div>
+  <p class="muted">系統依專長 40% / 地區 20% / 時段 15% / 意願 15% / 經驗 10% 計算媒合分數,預設勾選 60 分以上人選。</p>
+  <div id="recList"></div>
+  <div class="toolbar mt-2">
+    <button onclick="addToMatching()" id="addBtn">${ICON_PLUS} 加入媒合</button>
+    <span class="muted-2" id="selCount"></span>
+  </div>
+</div>
+
+<div class="card" id="matchesCard" style="display:none">
+  <h2>已建立的媒合</h2>
+  <div id="matchesList"></div>
+</div>
+
+</div>
+
+<div id="modalContainer"></div>
+
+<script src="/js/common.js"></script>
+<script>
+auth.requireAdmin();
+ui.injectHeaderFooter('matching');
+
+let currentNeedId = null;
+let recommended = [];
+
+// 替換 button 中的 icon placeholder
+document.body.innerHTML = document.body.innerHTML.replace(/\$\{ICON_PLUS\}/g, ui.icon('plus'));
+
+(async function() {
+  try {
+    const r1 = await api.get('/api/needs?status=受理');
+    const r2 = await api.get('/api/needs?status=媒合中');
+    const all = [...r1.records, ...r2.records];
+    const sel = document.getElementById('needSelect');
+    if (!all.length) {
+      sel.innerHTML = '<option value="">目前無進行中的需求</option>';
+      return;
+    }
+    sel.innerHTML = '<option value="">— 請選擇需求單 —</option>' +
+      all.map(n => {
+        const date = n['活動日期'] ? ui.formatDate(n['活動日期']) : '未排定';
+        return `<option value="${n.id}">${escape(n['活動名稱']||'(未命名)')} · ${date} · ${n['狀態']||''}</option>`;
+      }).join('');
+
+    // URL ?need=xxx 自動選擇
+    const preset = new URLSearchParams(location.search).get('need');
+    if (preset) { sel.value = preset; loadRecommend(); }
+  } catch (e) {
+    ui.toast('載入需求失敗', 'error');
+  }
+})();
+
+async function loadRecommend() {
+  const id = document.getElementById('needSelect').value;
+  currentNeedId = id;
+  if (!id) {
+    document.getElementById('needInfo').style.display = 'none';
+    document.getElementById('recCard').style.display = 'none';
+    document.getElementById('matchesCard').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('recCard').style.display = 'block';
+  document.getElementById('matchesCard').style.display = 'block';
+  ui.loading('recList', '搜尋合適人選中…');
+
+  try {
+    const data = await api.get(`/api/needs/${id}/recommend`);
+    recommended = data.candidates;
+
+    // 需求摘要
+    const need = data.need;
+    const skillCount = (need['所需專長']||[]).length;
+    const noNeed = document.getElementById('needInfo');
+    noNeed.style.display = 'block';
+    noNeed.innerHTML = `<div class="need-summary">
+      <h2>${escape(need['活動名稱']||'(未命名)')}</h2>
+      <div class="meta">
+        <span>${ui.icon('calendar')} <strong>${ui.formatDate(need['活動日期'])}</strong></span>
+        ${need['地點']?`<span>📍 ${escape(need['地點'])}</span>`:''}
+        ${need['所需人數']?`<span>需求 <strong>${need['所需人數']}</strong> 人</span>`:''}
+        <span>所需專長 <strong>${skillCount}</strong> 項</span>
+        ${need['急迫程度']?`<span>急迫:${ui.badge(need['急迫程度'])}</span>`:''}
+      </div>
+      <div class="toolbar mt-2">
+        <a class="btn btn-sm btn-secondary" href="/roster.html?need=${id}" target="_blank">${ui.icon('list')} 查看服務名單</a>
+      </div>
+    </div>`;
+
+    // 推薦表
+    document.getElementById('recCount').textContent = `共 ${recommended.length} 位候選`;
+    if (!recommended.length) {
+      ui.empty('recList', '沒有符合條件的人選,請放寬條件或先徵募人才', 'users');
+    } else {
+      const maxScore = Math.max(...recommended.map(c => c.score), 1);
+      document.getElementById('recList').innerHTML = `<div class="table-wrap"><table>
+        <thead><tr>
+          <th><input type="checkbox" onchange="toggleAll(this)"></th>
+          <th>姓名</th>
+          <th>媒合分數</th>
+          <th>細項</th>
+          <th>推薦原因</th>
+        </tr></thead>
+        <tbody>
+          ${recommended.map((c, i) => {
+            const cls = c.score >= 70 ? 'high' : c.score < 50 ? 'low' : '';
+            const pct = Math.round((c.score / maxScore) * 100);
+            const b = c.breakdown || {};
+            return `<tr>
+              <td><input type="checkbox" class="cand" data-i="${i}" ${c.score >= 60 ? 'checked' : ''} onchange="updateSelCount()"></td>
+              <td>
+                <strong>${escape(c.person['姓名']||'')}</strong>
+                ${c.person['居住地區']?`<div class="muted-2" style="font-size:0.8rem">${escape(c.person['居住地區'])}</div>`:''}
+              </td>
+              <td>
+                <div class="score-bar ${cls}">
+                  <span class="num">${c.score}</span>
+                  <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+                </div>
+              </td>
+              <td>
+                <div class="breakdown">
+                  ${b['專長']!==undefined?`<span class="pill">技 ${b['專長']}</span>`:''}
+                  ${b['地區']!==undefined?`<span class="pill">區 ${b['地區']}</span>`:''}
+                  ${b['時段']!==undefined?`<span class="pill">時 ${b['時段']}</span>`:''}
+                  ${b['意願']!==undefined?`<span class="pill">願 ${b['意願']}</span>`:''}
+                  ${b['經驗']!==undefined?`<span class="pill">驗 ${b['經驗']}</span>`:''}
+                </div>
+              </td>
+              <td><div class="reason-cell">${escape(c.reason||'')}</div></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>`;
+      updateSelCount();
+    }
+
+    // 已建立的媒合
+    const { matches } = await api.get('/api/needs/' + id);
+    if (!matches.length) {
+      ui.empty('matchesList', '尚未建立任何媒合', 'list');
+    } else {
+      document.getElementById('matchesList').innerHTML = `<div class="table-wrap"><table>
+        <thead><tr>
+          <th>候選人</th>
+          <th>邀請狀態</th>
+          <th>回覆</th>
+          <th>最終結果</th>
+          <th style="text-align:right">動作</th>
+        </tr></thead>
+        <tbody>${matches.map(m => `
+          <tr>
+            <td>${escape((m['候選人']||[]).join(', ') || '—')}</td>
+            <td>${ui.badge(m['邀請狀態']||'未發')}</td>
+            <td>${ui.badge(m['回覆狀態']||'未回覆')}</td>
+            <td>${ui.badge(m['最終結果']||'未定')}</td>
+            <td style="text-align:right">
+              <button class="btn-sm btn-secondary" onclick="genInvite('${m.id}','line')">${ui.icon('line')} LINE</button>
+              <button class="btn-sm btn-secondary" onclick="genInvite('${m.id}','email')">${ui.icon('mail')} Email</button>
+              <button class="btn-sm" onclick="markResult('${m.id}','確認服務')">${ui.icon('check')} 確認</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>`;
+    }
+  } catch (err) {
+    ui.toast(err.message, 'error');
+  }
+}
+
+function toggleAll(cb) {
+  document.querySelectorAll('input.cand').forEach(c => c.checked = cb.checked);
+  updateSelCount();
+}
+
+function updateSelCount() {
+  const n = document.querySelectorAll('input.cand:checked').length;
+  document.getElementById('selCount').textContent = n > 0 ? `已勾選 ${n} 位` : '';
+}
+
+async function addToMatching() {
+  const checks = [...document.querySelectorAll('input.cand:checked')];
+  if (!checks.length) { ui.toast('請至少勾選一位', 'warn'); return; }
+  const candidates = checks.map(cb => {
+    const c = recommended[parseInt(cb.dataset.i)];
+    return {
+      personId: c.personId,
+      matchedSkills: c.matchedSkillRecordIds,
+      reason: c.reason + ' | 分數:' + c.score,
+    };
+  });
+  try {
+    await api.post(`/api/needs/${currentNeedId}/match`, { candidates });
+    ui.toast(`已加入 ${candidates.length} 位候選人`, 'success');
+    loadRecommend();
+  } catch (err) {
+    ui.toast(err.message, 'error');
+  }
+}
+
+async function genInvite(matchId, channel) {
+  try {
+    const res = await api.post(`/api/matching/${matchId}/invite`, { channel });
+    const c = document.getElementById('modalContainer');
+    const channelLabel = channel === 'line' ? 'LINE' : 'Email';
+    c.innerHTML = `
+      <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>${ui.icon(channel === 'line' ? 'line' : 'mail')} ${channelLabel} 邀請文</h2>
+            <button class="close-btn" onclick="closeModal()">${ui.icon('x',18)}</button>
+          </div>
+          <div class="modal-body">
+            <div class="info-row" style="display:flex;gap:0.75rem;padding:0.5rem 0;border-bottom:1px dashed var(--border);font-size:0.875rem;">
+              <span class="muted">收件人:</span>
+              <strong>${escape(res.person['姓名'])}</strong>
+              <span class="muted-2">${escape(res.person['手機']||res.person['Email']||'—')}</span>
+            </div>
+            <textarea id="inviteText" rows="12" style="margin-top:1rem">${escape(res.text)}</textarea>
+            <div class="toolbar mt-2">
+              <button onclick="copyInvite()">${ui.icon('check')} 複製文字</button>
+              <span class="spacer"></span>
+              <button class="btn-secondary" onclick="closeModal()">關閉</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    await api.put('/api/matching/' + matchId, { '邀請狀態': '已發' });
+  } catch (err) {
+    ui.toast(err.message, 'error');
+  }
+}
+
+function copyInvite() {
+  const txt = document.getElementById('inviteText').value;
+  navigator.clipboard.writeText(txt).then(() => {
+    ui.toast('已複製到剪貼簿', 'success');
+  });
+}
+
+function closeModal() {
+  document.getElementById('modalContainer').innerHTML = '';
+  loadRecommend();
+}
+
+async function markResult(matchId, result) {
+  if (!await ui.confirm(`確認將此媒合標記為「${result}」?`)) return;
+  try {
+    await api.put('/api/matching/' + matchId, { '最終結果': result, '回覆狀態': '接受' });
+    ui.toast('已更新', 'success');
+    loadRecommend();
+  } catch (err) {
+    ui.toast(err.message, 'error');
+  }
+}
+
+function escape(s) { return String(s||'').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'})[c]); }
+</script>
+</body>
+</html>

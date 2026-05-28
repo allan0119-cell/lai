@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>活動服務名單 · 管理後台</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .roster-meta {
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+  .roster-meta strong { color: var(--text); font-weight: 600; }
+  .roster-meta .meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-right: 1.25rem;
+  }
+  table.roster {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+  table.roster th, table.roster td {
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+  }
+  table.roster thead { background: var(--bg-soft); }
+  table.roster th {
+    font-weight: 600;
+    color: var(--text-soft);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  table.roster tr:hover { background: var(--bg-hover); }
+  .seq {
+    display: inline-block;
+    width: 24px; height: 24px;
+    background: var(--bg-soft);
+    color: var(--muted);
+    border-radius: 50%;
+    text-align: center;
+    line-height: 24px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  @media print {
+    .site-header, .site-footer, .no-print { display: none !important; }
+    body { background: white; }
+    .card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    table.roster th { background: #f0f0f0 !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container container-wide">
+<div id="flash"></div>
+
+<div class="card no-print">
+  <h2>選擇活動</h2>
+  <div class="toolbar">
+    <select id="needSelect" onchange="loadRoster()" style="flex:1; min-width:280px;">
+      <option value="">載入中…</option>
+    </select>
+    <button class="btn-secondary" onclick="window.print()" id="printBtn" disabled>${ICON_PRINT} 列印</button>
+    <button class="btn-secondary" onclick="exportCsv()" id="csvBtn" disabled>${ICON_DL} 匯出 CSV</button>
+  </div>
+</div>
+
+<div id="rosterCard" style="display:none">
+  <div class="card">
+    <h2 id="rosterTitle"></h2>
+    <div class="roster-meta" id="rosterMeta"></div>
+    <div class="stat-grid mt-3" id="statsRow"></div>
+  </div>
+
+  <div class="card">
+    <h2>確認服務名單 <span class="muted-2" id="confirmedCount" style="font-weight:normal;font-size:0.875rem;"></span></h2>
+    <div id="rosterTableWrap"></div>
+  </div>
+
+  <div class="card no-print">
+    <h2>候選名單(尚未確認)</h2>
+    <div id="pendingTableWrap"></div>
+  </div>
+</div>
+
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+auth.requireAdmin();
+ui.injectHeaderFooter('roster');
+
+document.body.innerHTML = document.body.innerHTML
+  .replace(/\$\{ICON_PRINT\}/g, ui.icon('print'))
+  .replace(/\$\{ICON_DL\}/g, ui.icon('download'));
+
+let currentNeed = null;
+let currentRoster = [];
+
+async function init() {
+  try {
+    const needs = await api.get('/api/needs?status=*');
+    const sel = document.getElementById('needSelect');
+    if (!needs.records.length) {
+      sel.innerHTML = '<option value="">尚無活動需求</option>';
+      return;
+    }
+    sel.innerHTML = '<option value="">— 請選擇活動 —</option>' +
+      needs.records.map(n => {
+        const f = n.fields || n;
+        const date = f['活動日期'] ? ui.formatDate(f['活動日期']) : '未排定';
+        const status = f['狀態'] || '';
+        return `<option value="${n.id}">${escape(f['活動名稱']||'(無名稱)')} · ${date} · ${status}</option>`;
+      }).join('');
+
+    const preset = new URLSearchParams(location.search).get('need');
+    if (preset) { sel.value = preset; loadRoster(); }
+  } catch (e) {
+    ui.toast('載入活動清單失敗', 'error');
+  }
+}
+
+async function loadRoster() {
+  const id = document.getElementById('needSelect').value;
+  if (!id) {
+    document.getElementById('rosterCard').style.display = 'none';
+    document.getElementById('printBtn').disabled = true;
+    document.getElementById('csvBtn').disabled = true;
+    return;
+  }
+
+  document.getElementById('rosterCard').style.display = 'block';
+  ui.loading('rosterTableWrap', '載入名單中…');
+  ui.loading('pendingTableWrap', '');
+
+  try {
+    const data = await api.get(`/api/needs/${id}/roster`);
+    currentNeed = data.need;
+    currentRoster = data.roster || [];
+
+    const f = currentNeed.fields || currentNeed;
+    document.getElementById('rosterTitle').textContent = f['活動名稱'] || '(無名稱)';
+
+    const meta = [];
+    if (f['活動日期']) meta.push(`<span class="meta-item">${ui.icon('calendar')} <strong>${ui.formatDate(f['活動日期'])}</strong></span>`);
+    if (f['地點']) meta.push(`<span class="meta-item">📍 ${escape(f['地點'])}</span>`);
+    if (f['服務時段']) meta.push(`<span class="meta-item">⏰ ${(f['服務時段']||[]).join('、')}</span>`);
+    if (f['所需人數']) meta.push(`<span class="meta-item">需求 <strong>${f['所需人數']}</strong> 人</span>`);
+    if (f['急迫程度']) meta.push(`<span class="meta-item">${ui.badge(f['急迫程度'])}</span>`);
+    document.getElementById('rosterMeta').innerHTML = meta.join('');
+
+    const confirmed = currentRoster.filter(r => {
+      const rf = r.fields || r;
+      return (rf['最終結果']||'') === '確認' || (rf['回覆狀態']||'') === '接受';
+    });
+    const pending = currentRoster.filter(r => !confirmed.includes(r));
+
+    const need = f['所需人數'] || 0;
+    const gap = need - confirmed.length;
+    document.getElementById('statsRow').innerHTML = `
+      <div class="stat-card"><div class="num">${need || '—'}</div><div class="label">需求人數</div></div>
+      <div class="stat-card success"><div class="num">${confirmed.length}</div><div class="label">已確認</div></div>
+      <div class="stat-card warn"><div class="num">${pending.length}</div><div class="label">待回覆</div></div>
+      <div class="stat-card ${gap > 0 ? 'warn' : 'success'}">
+        <div class="num">${gap > 0 ? '缺 ' + gap : '已足'}</div>
+        <div class="label">缺口狀態</div>
+      </div>`;
+
+    document.getElementById('confirmedCount').textContent = `(${confirmed.length} 人)`;
+    document.getElementById('rosterTableWrap').innerHTML = renderTable(confirmed, true);
+    document.getElementById('pendingTableWrap').innerHTML = renderTable(pending, false);
+    document.getElementById('printBtn').disabled = false;
+    document.getElementById('csvBtn').disabled = false;
+  } catch (e) {
+    ui.toast('載入名單失敗:' + e.message, 'error');
+  }
+}
+
+function renderTable(rows, isConfirmed) {
+  if (!rows.length) {
+    return `<div class="empty-state"><div class="icon">${ui.icon('users',24)}</div><p>${isConfirmed ? '尚無確認人選' : '無待回覆候選人'}</p></div>`;
+  }
+  const trs = rows.map((r, i) => {
+    const rf = r.fields || r;
+    const p = r.person || {};
+    const pf = p.fields || p;
+    return `<tr>
+      <td><span class="seq">${i + 1}</span></td>
+      <td>
+        <strong>${escape(pf['姓名']||'(未知)')}</strong>
+        ${pf['英文名'] ? `<div class="muted-2" style="font-size:0.78rem">${escape(pf['英文名'])}</div>` : ''}
+      </td>
+      <td>${escape(pf['手機']||'—')}</td>
+      <td class="muted">${escape(pf['Email']||'—')}</td>
+      <td>${(rf['符合專長']||[]).map(s=>`<span class="chip">${escape(s)}</span>`).join('') || escape(rf['分派角色']||'—')}</td>
+      <td>${ui.badge(rf['邀請狀態']||'未邀請')}</td>
+      <td>${ui.badge(rf['回覆狀態']||'未回覆')}</td>
+      <td class="muted-2">${escape(rf['備註']||'')}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="table-wrap"><table class="roster">
+    <thead><tr>
+      <th style="width:48px">#</th>
+      <th>姓名</th>
+      <th>手機</th>
+      <th>Email</th>
+      <th>專長/角色</th>
+      <th>邀請</th>
+      <th>回覆</th>
+      <th>備註</th>
+    </tr></thead>
+    <tbody>${trs}</tbody>
+  </table></div>`;
+}
+
+function exportCsv() {
+  if (!currentNeed) return;
+  const f = currentNeed.fields || currentNeed;
+  const header = ['序','姓名','英文名','手機','Email','專長/角色','邀請狀態','回覆狀態','最終結果','備註'];
+  const lines = [header.join(',')];
+  currentRoster.forEach((r, i) => {
+    const rf = r.fields || r;
+    const pf = (r.person && (r.person.fields || r.person)) || {};
+    const row = [
+      i + 1,
+      pf['姓名'] || '',
+      pf['英文名'] || '',
+      pf['手機'] || '',
+      pf['Email'] || '',
+      (rf['符合專長']||[]).join(';') || (rf['分派角色']||''),
+      rf['邀請狀態'] || '',
+      rf['回覆狀態'] || '',
+      rf['最終結果'] || '',
+      (rf['備註']||'').replace(/[\r\n,]/g,' '),
+    ].map(v => `"${String(v).replace(/"/g,'""')}"`);
+    lines.push(row.join(','));
+  });
+  const csv = '\uFEFF' + lines.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `服務名單_${(f['活動名稱']||'roster')}_${(f['活動日期']||'').slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  ui.toast('已匯出 CSV', 'success');
+}
+
+function escape(s) { return String(s||'').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'})[c]); }
+
+init();
+</script>
+</body>
+</html>

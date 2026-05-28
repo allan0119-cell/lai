@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>愛德人才服務平台 · 因主之名服務</title>
+<meta name="description" content="天主教會愛德人才服務平台,連結教友善用恩賜,服務天主子民。">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  /* ====== 頁面整體 ====== */
+  body {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201, 169, 97, 0.10) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 50% 100%, rgba(139, 38, 53, 0.06) 0%, transparent 50%),
+      var(--bg);
+    min-height: 100vh;
+  }
+
+  .entry { max-width: 880px; margin: 0 auto; padding: 0 1.25rem 4rem; }
+
+  /* ====== Hero ====== */
+  .hero {
+    position: relative;
+    text-align: center;
+    padding: 4rem 1.5rem 3rem;
+    margin-bottom: 3rem;
+    overflow: hidden;
+  }
+
+  /* 光芒裝飾 */
+  .hero-rays {
+    position: absolute;
+    top: 0; left: 50%;
+    width: 600px; height: 300px;
+    transform: translateX(-50%);
+    opacity: 0.08;
+    color: var(--gold-500);
+    pointer-events: none;
+  }
+  .hero-rays svg { width: 100%; height: 100%; }
+
+  /* 標誌與標題 */
+  .hero-mark {
+    width: 64px; height: 64px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-700) 100%);
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold-200);
+    box-shadow:
+      0 10px 30px rgba(139, 38, 53, 0.25),
+      0 4px 8px rgba(139, 38, 53, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+    animation: markFloat 6s ease-in-out infinite;
+  }
+  @keyframes markFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
+  }
+  .hero-mark::before, .hero-mark::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 20px;
+    border: 1px solid var(--gold-300);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .hero-mark::after {
+    inset: -16px;
+    opacity: 0.2;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--font-serif);
+    font-size: 0.85rem;
+    letter-spacing: 0.4em;
+    color: var(--gold-600);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    opacity: 0;
+    animation: rise 700ms 200ms ease-out forwards;
+  }
+
+  .hero h1 {
+    font-family: var(--font-serif);
+    font-size: 2.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+    opacity: 0;
+    animation: rise 700ms 350ms ease-out forwards;
+  }
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-800) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero-tagline {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    color: var(--text-soft);
+    letter-spacing: 0.15em;
+    margin-bottom: 2.25rem;
+    opacity: 0;
+    animation: rise 700ms 500ms ease-out forwards;
+  }
+  .hero-tagline .dot {
+    color: var(--gold-400);
+    margin: 0 0.5rem;
+    font-weight: bold;
+  }
+
+  /* 聖經引言區 */
+  .scripture-frame {
+    max-width: 540px;
+    margin: 0 auto 2.5rem;
+    padding: 1.75rem 2rem;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(250, 246, 235, 0.4) 100%);
+    border: 1px solid var(--gold-100);
+    border-radius: 4px;
+    position: relative;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0;
+    animation: rise 800ms 700ms ease-out forwards;
+  }
+  /* 角落裝飾 */
+  .scripture-frame::before, .scripture-frame::after,
+  .scripture-frame > .corner-tl, .scripture-frame > .corner-br {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--gold-400);
+  }
+  .scripture-frame::before {
+    top: -1px; left: -1px;
+    border-right: none; border-bottom: none;
+  }
+  .scripture-frame::after {
+    bottom: -1px; right: -1px;
+    border-left: none; border-top: none;
+  }
+  .scripture-frame .corner-tl {
+    top: -1px; right: -1px;
+    border-left: none; border-bottom: none;
+  }
+  .scripture-frame .corner-br {
+    bottom: -1px; left: -1px;
+    border-right: none; border-top: none;
+  }
+  .scripture-frame p {
+    font-family: var(--font-serif);
+    font-size: 1.0625rem;
+    font-style: italic;
+    line-height: 1.85;
+    color: var(--text);
+    margin: 0;
+    text-align: center;
+    letter-spacing: 0.03em;
+  }
+  .scripture-frame cite {
+    display: block;
+    font-style: normal;
+    font-size: 0.85rem;
+    color: var(--gold-600);
+    margin-top: 0.875rem;
+    letter-spacing: 0.1em;
+  }
+
+  /* 主要 CTAs */
+  .hero-cta {
+    display: flex;
+    gap: 0.875rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: rise 700ms 900ms ease-out forwards;
+  }
+  .hero-cta .btn { min-width: 160px; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ====== 飾邊分隔 ====== */
+  .ornate-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    margin: 2rem 0 3rem;
+    color: var(--gold-400);
+  }
+  .ornate-divider .line {
+    flex: 1;
+    max-width: 180px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-300), transparent);
+  }
+  .ornate-divider .sym {
+    width: 32px; height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold-500);
+  }
+
+  /* ====== 角色入口 ====== */
+  .role-section {
+    margin-bottom: 3.5rem;
+  }
+  .section-title {
+    text-align: center;
+    margin-bottom: 0.5rem;
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    color: var(--text);
+    letter-spacing: 0.06em;
+  }
+  .section-subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+  }
+
+  .role-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+  .role-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.25rem 1.75rem 1.75rem;
+    text-align: center;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .role-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--primary-500), transparent);
+    transform: scaleX(0.4);
+    transition: transform 300ms;
+  }
+  .role-card.gold::before {
+    background: linear-gradient(90deg, transparent, var(--gold-500), transparent);
+  }
+  .role-card:hover {
+    border-color: var(--primary-300);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+  }
+  .role-card.gold:hover { border-color: var(--gold-400); }
+  .role-card:hover::before { transform: scaleX(1); }
+
+  .role-icon {
+    width: 72px; height: 72px;
+    margin: 0 auto 1.25rem;
+    background: var(--primary-50);
+    color: var(--primary-600);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: var(--transition);
+  }
+  .role-card.gold .role-icon {
+    background: var(--gold-50);
+    color: var(--gold-600);
+  }
+  .role-icon::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1px dashed currentColor;
+    opacity: 0.3;
+    animation: spin 30s linear infinite;
+  }
+  .role-card:hover .role-icon { transform: scale(1.05); }
+
+  .role-card h3 {
+    font-family: var(--font-serif);
+    font-size: 1.3rem;
+    color: var(--text);
+    margin-bottom: 0.625rem;
+    letter-spacing: 0.04em;
+  }
+  .role-card .role-desc {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+    min-height: 3.5em;
+  }
+
+  /* ====== 三步驟 ====== */
+  .steps-section {
+    background: linear-gradient(180deg, transparent 0%, var(--bg-soft) 30%, var(--bg-soft) 70%, transparent 100%);
+    padding: 3rem 0;
+    margin: 0 -1.25rem 3rem;
+  }
+  .steps-inner {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    position: relative;
+  }
+  .step {
+    text-align: center;
+    padding: 1rem;
+    position: relative;
+  }
+  .step-num {
+    width: 44px; height: 44px;
+    margin: 0 auto 0.875rem;
+    background: var(--bg-card);
+    border: 1.5px solid var(--gold-300);
+    color: var(--gold-600);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.05rem;
+    box-shadow: var(--shadow-xs);
+  }
+  .step h4 {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.04em;
+  }
+  .step p {
+    color: var(--text-soft);
+    font-size: 0.875rem;
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* ====== 特色 ====== */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 3rem;
+  }
+  .feature {
+    padding: 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: var(--transition);
+  }
+  .feature:hover {
+    border-color: var(--gold-200);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+  .feature-icon {
+    width: 36px; height: 36px;
+    background: var(--gold-50);
+    color: var(--gold-600);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+  }
+  .feature h4 {
+    font-family: var(--font-serif);
+    font-size: 0.98rem;
+    color: var(--text);
+    margin-bottom: 0.375rem;
+    letter-spacing: 0.04em;
+  }
+  .feature p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  /* ====== 結尾區 ====== */
+  .closing {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    background: linear-gradient(180deg, var(--primary-50) 0%, transparent 100%);
+    border-radius: var(--radius-lg);
+    margin-bottom: 1rem;
+  }
+  .closing-quote {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--primary-800);
+    line-height: 1.85;
+    max-width: 480px;
+    margin: 0 auto 1rem;
+    letter-spacing: 0.03em;
+  }
+  .closing-cite {
+    font-size: 0.85rem;
+    color: var(--gold-600);
+    letter-spacing: 0.12em;
+  }
+
+  /* ====== 管理員入口 ====== */
+  .admin-link {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .admin-link a {
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: var(--transition);
+    padding-bottom: 2px;
+  }
+  .admin-link a:hover {
+    color: var(--primary-600);
+    border-bottom-color: var(--primary-300);
+  }
+
+  /* ====== 響應式 ====== */
+  @media (max-width: 640px) {
+    .hero { padding: 2.5rem 1rem 2rem; }
+    .hero h1 { font-size: 2rem; }
+    .hero-tagline { font-size: 1rem; }
+    .scripture-frame { padding: 1.25rem 1.5rem; }
+    .scripture-frame p { font-size: 1rem; }
+    .hero-cta { flex-direction: column; width: 100%; }
+    .hero-cta .btn { width: 100%; }
+    .steps-section { padding: 2rem 0; }
+  }
+
+  /* 旋轉(用於 icon 邊框) */
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<main class="entry">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <!-- 背景光芒 SVG -->
+    <div class="hero-rays" aria-hidden="true">
+      <svg viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="rayFade" cx="50%" cy="0%" r="50%">
+            <stop offset="0%" stop-color="currentColor" stop-opacity="1"/>
+            <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <g stroke="url(#rayFade)" stroke-width="1.2" fill="none">
+          <line x1="300" y1="0" x2="0"   y2="180"/>
+          <line x1="300" y1="0" x2="60"  y2="260"/>
+          <line x1="300" y1="0" x2="150" y2="300"/>
+          <line x1="300" y1="0" x2="225" y2="300"/>
+          <line x1="300" y1="0" x2="300" y2="300"/>
+          <line x1="300" y1="0" x2="375" y2="300"/>
+          <line x1="300" y1="0" x2="450" y2="300"/>
+          <line x1="300" y1="0" x2="540" y2="260"/>
+          <line x1="300" y1="0" x2="600" y2="180"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- 標誌 -->
+    <div class="hero-mark" aria-hidden="true">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M14 4h-4v6H4v4h6v6h4v-6h6v-4h-6V4z"/>
+      </svg>
+    </div>
+
+    <p class="hero-eyebrow">天主教會 · 因主之名服務</p>
+    <h1><span>愛德人才服務平台</span></h1>
+    <p class="hero-tagline">善用恩賜<span class="dot">·</span>共建教會<span class="dot">·</span>服務眾人</p>
+
+    <!-- 聖經引言 -->
+    <div class="scripture-frame">
+      <span class="corner-tl"></span>
+      <span class="corner-br"></span>
+      <p>
+        「凡你們對我這些最小兄弟中的<br>
+        一個所做的,就是對我做的。」
+        <cite>— 瑪 25:40 —</cite>
+      </p>
+    </div>
+
+    <!-- 主 CTA -->
+    <div class="hero-cta">
+      <a href="/register.html" class="btn btn-lg" id="cta1">
+        <span id="cta1-icon"></span> 我是教友 · 登錄服務
+      </a>
+      <a href="/needs.html" class="btn btn-lg btn-gold" id="cta2">
+        <span id="cta2-icon"></span> 我是堂區 · 提交需求
+      </a>
+    </div>
+  </section>
+
+  <!-- ============ 飾邊 ============ -->
+  <div class="ornate-divider" aria-hidden="true">
+    <span class="line"></span>
+    <span class="sym">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2 L12 22 M2 12 L22 12" stroke="currentColor" stroke-width="0.5" opacity="0.4"/>
+        <path d="M11 6 L13 6 L13 11 L18 11 L18 13 L13 13 L13 18 L11 18 L11 13 L6 13 L6 11 L11 11 Z" fill="currentColor"/>
+        <circle cx="12" cy="12" r="1.5" fill="white"/>
+      </svg>
+    </span>
+    <span class="line"></span>
+  </div>
+
+  <!-- ============ 三步驟 ============ -->
+  <section class="steps-section">
+    <div class="steps-inner">
+      <h2 class="section-title">運作方式</h2>
+      <p class="section-subtitle">三個步驟,讓您的恩賜成為教會的祝福</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">一</div>
+          <h4>登錄您的恩賜</h4>
+          <p>填寫個人專長、可服務時段與地區,告訴我們您願意如何服務。</p>
+        </div>
+        <div class="step">
+          <div class="step-num">二</div>
+          <h4>系統智慧媒合</h4>
+          <p>當堂區或善會提出活動需求,系統依專長與時段為您找到合適機會。</p>
+        </div>
+        <div class="step">
+          <div class="step-num">三</div>
+          <h4>共同服務天主</h4>
+          <p>收到邀請後可自由決定參與,以恩賜回應主的呼召,成全愛德。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 角色入口 ============ -->
+  <section class="role-section">
+    <h2 class="section-title">您是哪一位?</h2>
+    <p class="section-subtitle">請選擇身分,開始參與</p>
+
+    <div class="role-grid">
+      <div class="role-card" onclick="location.href='/register.html'">
+        <div class="role-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        <h3>我是教友</h3>
+        <p class="role-desc">願意以您的專長、時間或經驗服務教會。請填寫服務意願表,讓我們在合適的時刻邀請您。</p>
+        <a href="/register.html" class="btn btn-block">開始登錄</a>
+      </div>
+
+      <div class="role-card gold" onclick="location.href='/needs.html'">
+        <div class="role-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <h3>我是堂區 / 善會</h3>
+        <p class="role-desc">活動需要人手協助?提交需求單,系統會自動為您推薦最合適的服務人選。</p>
+        <a href="/needs.html" class="btn btn-block btn-gold">提交需求</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 飾邊 ============ -->
+  <div class="ornate-divider" aria-hidden="true">
+    <span class="line"></span>
+    <span class="sym">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+        <circle cx="10" cy="10" r="2"/>
+        <circle cx="3" cy="10" r="1"/>
+        <circle cx="17" cy="10" r="1"/>
+      </svg>
+    </span>
+    <span class="line"></span>
+  </div>
+
+  <!-- ============ 特色 ============ -->
+  <section>
+    <h2 class="section-title">為什麼選擇本平台</h2>
+    <p class="section-subtitle">為教會量身設計的人才管理系統</p>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v18M3 12h18M5.5 5.5l13 13M18.5 5.5l-13 13"/>
+          </svg>
+        </div>
+        <h4>智慧媒合</h4>
+        <p>依專長、地區、可用時段自動推薦最合適的服務人選。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+          </svg>
+        </div>
+        <h4>節省時間</h4>
+        <p>免去逐一打電話詢問,系統一鍵產生邀請名單。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <h4>個資保護</h4>
+        <p>嚴守個資法規範,僅授權管理者可查看完整資料。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/>
+          </svg>
+        </div>
+        <h4>數據洞察</h4>
+        <p>掌握各堂區人才分布,協助教會長遠規劃培訓方向。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 結尾引言 ============ -->
+  <section class="closing">
+    <p class="closing-quote">
+      「上主賜給每人不同的恩寵,<br>
+      正如那賜給的標準。」
+    </p>
+    <p class="closing-cite">— 弗 4:7 —</p>
+  </section>
+
+  <!-- ============ 管理員入口 ============ -->
+  <p class="admin-link">
+    <a href="/login.html">› 管理者入口</a>
+  </p>
+
+</main>
+
+<script src="/js/common.js"></script>
+<script>
+  // 注入 footer
+  document.body.insertAdjacentHTML('beforeend', ui.renderFooter());
+
+  // 注入 CTA 圖示
+  document.getElementById('cta1-icon').innerHTML = ui.icon('user', 18);
+  document.getElementById('cta2-icon').innerHTML = ui.icon('users', 18);
+</script>
+</body>
+</html>

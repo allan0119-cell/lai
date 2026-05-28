@@ -1,0 +1,28 @@
+{
+  "name": "catholic-talent-platform",
+  "version": "1.0.0",
+  "description": "天主教會愛德人才服務平台 - 教友登錄、需求媒合、邀請通知",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js",
+    "hash": "node -e \"console.log(require('bcryptjs').hashSync(process.argv[1], 10))\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0",
+    "airtable": "^0.12.2",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

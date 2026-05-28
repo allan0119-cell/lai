@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>教友人才登錄 · 愛德人才服務平台</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .intro {
+    background: linear-gradient(135deg, var(--primary-50) 0%, var(--gold-50) 100%);
+    border: 1px solid var(--primary-100);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .intro h2 {
+    border: none;
+    padding: 0;
+    margin: 0 0 0.5rem;
+    color: var(--primary-700);
+    font-size: 1.125rem;
+  }
+  .intro h2::before { display: none; }
+  .intro p { color: var(--text-soft); margin: 0; font-size: 0.92rem; }
+
+  .section-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    background: var(--primary-500);
+    color: white;
+    border-radius: 50%;
+    font-family: var(--font-serif);
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h2 .section-num { margin-right: 0.25rem; }
+  .card h2::before { display: none; }
+
+  .consent-box {
+    background: var(--bg-soft);
+    border-left: 3px solid var(--gold-400);
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius);
+    margin: 1.5rem 0 1rem;
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+  .consent-box strong {
+    display: block;
+    color: var(--gold-600);
+    margin-bottom: 0.5rem;
+    font-family: var(--font-serif);
+  }
+  .consent-box .check-item {
+    margin-top: 0.875rem;
+    background: white;
+  }
+</style>
+</head>
+<body>
+
+<div class="container container-narrow">
+
+<div class="intro">
+  <h2>歡迎登錄人才服務</h2>
+  <p>願意以您的恩賜服務教會,願主祝福您。請花約 5 分鐘填寫,讓我們能在合適的時機邀請您。</p>
+</div>
+
+<div id="flash"></div>
+
+<form id="form">
+  <!-- 個人資料 -->
+  <div class="card">
+    <h2><span class="section-num">1</span> 個人基本資料</h2>
+
+    <div class="form-grid">
+      <div>
+        <label>姓名 <span class="required">*</span></label>
+        <input name="姓名" required autocomplete="name">
+      </div>
+      <div>
+        <label>英文名 <span class="hint">如有</span></label>
+        <input name="英文名">
+      </div>
+      <div>
+        <label>性別</label>
+        <select name="性別">
+          <option value="">請選擇</option>
+          <option>男</option>
+          <option>女</option>
+        </select>
+      </div>
+      <div>
+        <label>出生年份 <span class="hint">用於分齡服務媒合</span></label>
+        <input type="number" name="出生年份" min="1900" max="2020" placeholder="例如 1985">
+      </div>
+      <div>
+        <label>手機 <span class="required">*</span></label>
+        <input type="tel" name="手機" required placeholder="0912345678" autocomplete="tel">
+      </div>
+      <div>
+        <label>Email <span class="hint">建議填寫,接收通知</span></label>
+        <input type="email" name="Email" autocomplete="email">
+      </div>
+    </div>
+  </div>
+
+  <!-- 教會所屬 -->
+  <div class="card">
+    <h2><span class="section-num">2</span> 教會所屬</h2>
+
+    <div class="form-grid">
+      <div>
+        <label>所屬教區</label>
+        <select name="所屬教區">
+          <option value="">請選擇</option>
+          <option>台北總教區</option>
+          <option>新竹教區</option>
+          <option>台中教區</option>
+          <option>嘉義教區</option>
+          <option>台南教區</option>
+          <option>高雄教區</option>
+          <option>花蓮教區</option>
+        </select>
+      </div>
+      <div>
+        <label>所屬堂區</label>
+        <select name="所屬堂區" id="parishSelect">
+          <option value="">載入中…</option>
+        </select>
+      </div>
+    </div>
+
+    <label>所屬善會 <span class="hint">可複選</span></label>
+    <div class="check-group" id="ministryGroup">
+      <label class="check-item"><input type="checkbox" name="所屬善會" value="慈幼會"><span>慈幼會</span></label>
+      <label class="check-item"><input type="checkbox" name="所屬善會" value="聖母軍"><span>聖母軍</span></label>
+      <label class="check-item"><input type="checkbox" name="所屬善會" value="基督活力運動"><span>基督活力運動</span></label>
+      <label class="check-item"><input type="checkbox" name="所屬善會" value="禮儀組"><span>禮儀組</span></label>
+      <label class="check-item"><input type="checkbox" name="所屬善會" value="讀經班"><span>讀經班</span></label>
+      <label class="check-item"><input type="checkbox" name="所屬善會" value="青年會"><span>青年會</span></label>
+    </div>
+  </div>
+
+  <!-- 服務意願 -->
+  <div class="card">
+    <h2><span class="section-num">3</span> 服務時間與地區</h2>
+
+    <div class="form-row">
+      <label>居住地區</label>
+      <select name="居住地區" id="liveRegion" style="max-width:240px"><option value="">請選擇</option></select>
+    </div>
+
+    <div class="form-row">
+      <label>可服務區域 <span class="hint">可複選,跨區服務愈多媒合機會愈大</span></label>
+      <div class="check-group" id="serviceRegion"></div>
+    </div>
+
+    <div class="form-row">
+      <label>可服務時段 <span class="hint">可複選</span></label>
+      <div class="check-group">
+        <label class="check-item"><input type="checkbox" name="可服務時段" value="平日上午"><span>平日上午</span></label>
+        <label class="check-item"><input type="checkbox" name="可服務時段" value="平日下午"><span>平日下午</span></label>
+        <label class="check-item"><input type="checkbox" name="可服務時段" value="平日晚上"><span>平日晚上</span></label>
+        <label class="check-item"><input type="checkbox" name="可服務時段" value="週六"><span>週六</span></label>
+        <label class="check-item"><input type="checkbox" name="可服務時段" value="主日"><span>主日</span></label>
+      </div>
+    </div>
+
+    <div class="form-row" style="background:var(--success-bg);padding:1rem;border-radius:var(--radius);">
+      <label class="check-item" style="background:white;">
+        <input type="checkbox" name="是否願意接受邀請" checked>
+        <span><strong>我願意接受教會單位的服務邀請</strong> <span class="muted-2" style="font-weight:normal;">(可隨時取消)</span></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- 專長 -->
+  <div class="card">
+    <h2><span class="section-num">4</span> 專長與才能</h2>
+    <p class="muted mb-2">請從下方標準專長勾選,或在「其他補充」中自由描述。<br>系統會自動歸類後送管理者審核。</p>
+
+    <label>標準專長 <span class="hint">可複選</span></label>
+    <div class="check-group" id="skillGroup">
+      <span class="muted">載入中…</span>
+    </div>
+
+    <div class="form-row mt-3">
+      <label>其他專長補充 <span class="hint">每行一項</span></label>
+      <textarea id="freeSkills" rows="4" placeholder="例如:&#10;會修教堂的音響設備&#10;能用菲律賓語做翻譯&#10;有 10 年安寧病房志工經驗"></textarea>
+      <p class="form-help">這些自由描述會由管理者審核後納入專長庫,讓未來更精準媒合。</p>
+    </div>
+  </div>
+
+  <!-- 信仰與備註 -->
+  <div class="card">
+    <h2><span class="section-num">5</span> 信仰背景與備註 <span class="muted-2" style="font-weight:normal;font-size:0.875rem;">(選填)</span></h2>
+
+    <div class="form-row">
+      <label>信仰背景簡述</label>
+      <textarea name="信仰背景簡述" rows="3" placeholder="如:領洗年份、堂區、神師、慕道班經驗..."></textarea>
+    </div>
+
+    <div class="form-row">
+      <label>其他備註</label>
+      <textarea name="備註" rows="3" placeholder="任何想讓管理者了解的事項"></textarea>
+    </div>
+  </div>
+
+  <!-- 同意聲明 -->
+  <div class="card">
+    <div class="consent-box">
+      <strong>個人資料使用聲明</strong>
+      本平台基於教會慈善服務媒合之目的,蒐集您所提供的個人資料,僅供堂區或教區管理者
+      查詢、邀請與聯繫使用,絕不外流第三方。您可隨時要求查詢、更正或刪除您的資料,
+      詳情請洽所屬堂區窗口或本平台管理者。
+
+      <label class="check-item">
+        <input type="checkbox" id="consent" required>
+        <span>我已閱讀並同意上述個人資料使用聲明</span>
+      </label>
+    </div>
+
+    <button type="submit" id="submitBtn" class="btn-block btn-lg">
+      <span id="submitText">送出登錄</span>
+    </button>
+    <p class="muted text-center mt-2" style="font-size:0.825rem;">
+      送出後系統將自動通知所屬堂區管理者,通常 1-3 個工作天內審核完成。
+    </p>
+  </div>
+</form>
+
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+const TW_REGIONS = ['台北市','新北市','基隆市','桃園市','新竹市','新竹縣','苗栗縣',
+  '台中市','彰化縣','南投縣','雲林縣','嘉義市','嘉義縣','台南市',
+  '高雄市','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣'];
+
+(async function init() {
+  document.body.insertAdjacentHTML('afterbegin', `<header class="site-header">
+    <h1><span class="logo-mark">${ui.icon('cross', 16)}</span><span>教友人才登錄</span></h1>
+    <nav><a href="/index.html">${ui.icon('home')}回首頁</a></nav>
+  </header>`);
+  document.body.insertAdjacentHTML('beforeend', ui.renderFooter());
+
+  const liveSel = document.getElementById('liveRegion');
+  const serviceDiv = document.getElementById('serviceRegion');
+  TW_REGIONS.forEach(r => {
+    liveSel.insertAdjacentHTML('beforeend', `<option>${r}</option>`);
+    serviceDiv.insertAdjacentHTML('beforeend',
+      `<label class="check-item"><input type="checkbox" name="可服務區域" value="${r}"><span>${r}</span></label>`);
+  });
+
+  try {
+    const { records } = await api.get('/api/parishes');
+    const sel = document.getElementById('parishSelect');
+    sel.innerHTML = '<option value="">請選擇</option>' +
+      records.map(p => `<option value="${p.id}">${p['堂區名稱']}${p['縣市']?' ('+p['縣市']+')':''}</option>`).join('');
+  } catch (e) {
+    document.getElementById('parishSelect').innerHTML = '<option>無法載入堂區</option>';
+  }
+
+  try {
+    const { records } = await api.get('/api/skills');
+    const grp = document.getElementById('skillGroup');
+    if (!records.length) {
+      grp.innerHTML = '<span class="muted">尚無標準專長,請於下方自由填寫</span>';
+    } else {
+      grp.innerHTML = records.map(s =>
+        `<label class="check-item"><input type="checkbox" name="skill" value="${s.id}"><span>${s['專長名稱']}</span></label>`
+      ).join('');
+    }
+  } catch (e) {
+    document.getElementById('skillGroup').innerHTML = '<span class="muted">技能字典載入失敗</span>';
+  }
+})();
+
+document.getElementById('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const txt = document.getElementById('submitText');
+  btn.disabled = true;
+  txt.innerHTML = '<span class="spinner" style="border-color:rgba(255,255,255,.3);border-top-color:white"></span> 送出中…';
+
+  const fd = new FormData(e.target);
+  const data = {};
+  ['姓名','英文名','性別','出生年份','手機','Email','所屬教區','居住地區','信仰背景簡述','備註']
+    .forEach(k => { const v = fd.get(k); if (v) data[k] = v; });
+  if (data['出生年份']) data['出生年份'] = parseInt(data['出生年份'], 10);
+
+  data['所屬善會'] = fd.getAll('所屬善會');
+  data['可服務區域'] = fd.getAll('可服務區域');
+  data['可服務時段'] = fd.getAll('可服務時段');
+  data['是否願意接受邀請'] = !!fd.get('是否願意接受邀請');
+
+  const parish = fd.get('所屬堂區');
+  if (parish) data['所屬堂區'] = [parish];
+
+  data.consent = document.getElementById('consent').checked;
+  const free = document.getElementById('freeSkills').value
+    .split('\n').map(s => s.trim()).filter(Boolean);
+  if (free.length > 0) data.freeSkills = free;
+  const skillIds = fd.getAll('skill');
+
+  try {
+    const res = await api.post('/api/people', data);
+    for (const skId of skillIds) {
+      try {
+        await api.post('/api/people-skills', { '人員': res.id, '專長': skId, '是否願意服務': true });
+      } catch (e) { console.warn(e); }
+    }
+    ui.toast('登錄成功!感謝您願意服務', 'success');
+    document.querySelector('.container').innerHTML = `
+      <div class="card text-center" style="padding:3rem 1.5rem;">
+        <div style="width:72px;height:72px;background:var(--success-bg);color:var(--success);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+          ${ui.icon('check', 36)}
+        </div>
+        <h2 style="border:none;padding:0;justify-content:center;">登錄完成</h2>
+        <p class="muted mb-2">感謝您願意以恩賜服務教會。<br>管理者審核通過後,系統會在合適時機與您聯繫。</p>
+        <p class="muted" style="font-family:var(--font-serif);font-style:italic;">
+          「你們白白得來的,也要白白分施。」<br>—— 瑪 10:8
+        </p>
+        <a href="/index.html" class="btn mt-2">返回首頁</a>
+      </div>`;
+  } catch (err) {
+    ui.toast(err.message, 'error');
+    btn.disabled = false;
+    txt.textContent = '送出登錄';
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>更新我的服務意願 · 愛德人才服務平台</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .intro {
+    background: linear-gradient(135deg, var(--primary-50) 0%, var(--gold-50) 100%);
+    border: 1px solid var(--primary-100);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .intro h2 {
+    border: none; padding: 0; margin: 0 0 0.5rem;
+    color: var(--primary-700); font-size: 1.125rem;
+  }
+  .intro h2::before { display: none; }
+  .intro p { color: var(--text-soft); margin: 0; font-size: 0.92rem; }
+  .intro .name { font-family: var(--font-serif); font-weight: 600; color: var(--primary-700); }
+
+  .section-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    background: var(--primary-500);
+    color: white;
+    border-radius: 50%;
+    font-family: var(--font-serif);
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h2 .section-num { margin-right: 0.25rem; }
+  .card h2::before { display: none; }
+
+  .willing-toggle {
+    background: var(--bg-soft);
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius);
+    border-left: 3px solid var(--success);
+  }
+  .willing-toggle.opt-out { border-left-color: var(--muted); background: var(--bg-soft); }
+</style>
+</head>
+<body>
+
+<div class="container container-narrow">
+
+<div id="loadingState" class="card text-center" style="padding:3rem 1.5rem;">
+  <div class="spinner spinner-lg" style="margin: 0 auto 1rem;"></div>
+  <p class="muted">驗證您的身分中…</p>
+</div>
+
+<div id="errorState" style="display:none">
+  <div class="card text-center" style="padding:3rem 1.5rem;">
+    <div style="width:64px;height:64px;background:var(--error-bg);color:var(--error);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <h2 style="border:none;padding:0;justify-content:center;">無法存取</h2>
+    <p class="muted mb-2" id="errorMsg">驗證連結無效或已過期</p>
+    <p class="muted-2" style="font-size:0.85rem">請聯繫所屬堂區管理者重新取得更新連結。</p>
+    <a href="/index.html" class="btn mt-2">返回首頁</a>
+  </div>
+</div>
+
+<div id="formState" style="display:none">
+  <div class="intro">
+    <h2><span class="name" id="greetName"></span>,願主祝福您</h2>
+    <p>您可以在此更新個人聯絡方式、可服務時段與地區,或調整接受邀請的意願。</p>
+  </div>
+
+  <div id="flash"></div>
+
+  <form id="form">
+    <!-- 聯絡方式 -->
+    <div class="card">
+      <h2><span class="section-num">1</span> 聯絡方式</h2>
+      <div class="form-grid">
+        <div>
+          <label>手機</label>
+          <input type="tel" name="手機" id="f_phone">
+        </div>
+        <div>
+          <label>Email</label>
+          <input type="email" name="Email" id="f_email">
+        </div>
+      </div>
+    </div>
+
+    <!-- 服務意願 -->
+    <div class="card">
+      <h2><span class="section-num">2</span> 服務意願</h2>
+
+      <div class="willing-toggle" id="willingBox">
+        <label class="check-item" style="background:white;">
+          <input type="checkbox" name="是否願意接受邀請" id="f_willing" onchange="toggleWilling()">
+          <span><strong id="willingLabel">我願意接受教會單位的服務邀請</strong></span>
+        </label>
+        <p class="muted-2 mt-1" style="font-size:0.825rem;margin-bottom:0;">
+          取消勾選後,系統不會再將您納入媒合清單,但您的資料仍會保留。
+        </p>
+      </div>
+
+      <div class="form-row mt-3">
+        <label>可服務時段 <span class="hint">可複選</span></label>
+        <div class="check-group" id="f_timeslots">
+          <label class="check-item"><input type="checkbox" name="可服務時段" value="平日上午"><span>平日上午</span></label>
+          <label class="check-item"><input type="checkbox" name="可服務時段" value="平日下午"><span>平日下午</span></label>
+          <label class="check-item"><input type="checkbox" name="可服務時段" value="平日晚上"><span>平日晚上</span></label>
+          <label class="check-item"><input type="checkbox" name="可服務時段" value="週六"><span>週六</span></label>
+          <label class="check-item"><input type="checkbox" name="可服務時段" value="主日"><span>主日</span></label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>可服務區域 <span class="hint">可複選</span></label>
+        <div class="check-group" id="f_regions"></div>
+      </div>
+    </div>
+
+    <!-- 備註 -->
+    <div class="card">
+      <h2><span class="section-num">3</span> 備註</h2>
+      <textarea name="備註" id="f_notes" rows="4" placeholder="例如:近期有事不便服務、想調整服務類型等"></textarea>
+    </div>
+
+    <div class="card">
+      <button type="submit" id="submitBtn" class="btn-block btn-lg">
+        <span id="submitText">儲存更新</span>
+      </button>
+      <p class="muted text-center mt-2" style="font-size:0.825rem;">
+        儲存後,系統將立即套用您的設定。
+      </p>
+    </div>
+  </form>
+</div>
+
+<div id="successState" style="display:none">
+  <div class="card text-center" style="padding:3rem 1.5rem;">
+    <div style="width:72px;height:72px;background:var(--success-bg);color:var(--success);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h2 style="border:none;padding:0;justify-content:center;">更新完成</h2>
+    <p class="muted mb-2">感謝您持續關注教會服務。</p>
+    <p class="muted" style="font-family:var(--font-serif);font-style:italic;">
+      「在這小子中失掉一個,是你們在天之父所不願意的。」<br>—— 瑪 18:14
+    </p>
+    <a href="/index.html" class="btn mt-2">返回首頁</a>
+  </div>
+</div>
+
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+const TW_REGIONS = ['台北市','新北市','基隆市','桃園市','新竹市','新竹縣','苗栗縣',
+  '台中市','彰化縣','南投縣','雲林縣','嘉義市','嘉義縣','台南市',
+  '高雄市','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣'];
+
+const params = new URLSearchParams(location.search);
+const personId = params.get('id');
+const token = params.get('t');
+
+document.body.insertAdjacentHTML('afterbegin', `<header class="site-header">
+  <h1><span class="logo-mark">${ui.icon('cross', 16)}</span><span>更新服務意願</span></h1>
+  <nav><a href="/index.html">${ui.icon('home')}回首頁</a></nav>
+</header>`);
+document.body.insertAdjacentHTML('beforeend', ui.renderFooter());
+
+function showError(msg) {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('formState').style.display = 'none';
+  document.getElementById('errorState').style.display = 'block';
+  if (msg) document.getElementById('errorMsg').textContent = msg;
+}
+
+function toggleWilling() {
+  const cb = document.getElementById('f_willing');
+  const box = document.getElementById('willingBox');
+  const label = document.getElementById('willingLabel');
+  if (cb.checked) {
+    box.classList.remove('opt-out');
+    label.textContent = '我願意接受教會單位的服務邀請';
+  } else {
+    box.classList.add('opt-out');
+    label.textContent = '我目前暫不接受邀請(可隨時重新啟用)';
+  }
+}
+
+(async function init() {
+  if (!personId || !token) {
+    showError('連結缺少必要參數,請重新取得更新連結');
+    return;
+  }
+
+  // 渲染地區 checkbox
+  const regionsEl = document.getElementById('f_regions');
+  regionsEl.innerHTML = TW_REGIONS.map(r =>
+    `<label class="check-item"><input type="checkbox" name="可服務區域" value="${r}"><span>${r}</span></label>`
+  ).join('');
+
+  // 用 token 載入個人資料
+  try {
+    const r = await fetch(`/api/people/${personId}/self`, {
+      headers: { 'X-Self-Token': token },
+    });
+    if (r.status === 401 || r.status === 403) {
+      showError('連結已過期或無效,請聯繫管理者');
+      return;
+    }
+    if (!r.ok) {
+      const err = await r.json().catch(()=>({}));
+      showError(err.error || `載入失敗 (${r.status})`);
+      return;
+    }
+    const data = await r.json();
+    const p = data.person || data;
+    const f = p.fields || p;
+
+    document.getElementById('greetName').textContent = f['姓名'] || '教友';
+    document.getElementById('f_phone').value = f['手機'] || '';
+    document.getElementById('f_email').value = f['Email'] || '';
+    document.getElementById('f_notes').value = f['備註'] || '';
+
+    const willingCb = document.getElementById('f_willing');
+    willingCb.checked = f['是否願意接受邀請'] !== false;
+    toggleWilling();
+
+    (f['可服務時段']||[]).forEach(t => {
+      const cb = document.querySelector(`#f_timeslots input[value="${t}"]`);
+      if (cb) cb.checked = true;
+    });
+    (f['可服務區域']||[]).forEach(t => {
+      const cb = document.querySelector(`#f_regions input[value="${t}"]`);
+      if (cb) cb.checked = true;
+    });
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('formState').style.display = 'block';
+  } catch (e) {
+    showError('網路錯誤,請稍後再試');
+  }
+})();
+
+document.getElementById('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const txt = document.getElementById('submitText');
+  btn.disabled = true;
+  txt.innerHTML = '<span class="spinner" style="border-color:rgba(255,255,255,.3);border-top-color:white"></span> 儲存中…';
+
+  const fd = new FormData(e.target);
+  const data = {
+    '手機': fd.get('手機') || '',
+    'Email': fd.get('Email') || '',
+    '備註': fd.get('備註') || '',
+    '是否願意接受邀請': !!fd.get('是否願意接受邀請'),
+    '可服務時段': fd.getAll('可服務時段'),
+    '可服務區域': fd.getAll('可服務區域'),
+  };
+
+  try {
+    const r = await fetch(`/api/people/${personId}/self-update`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Self-Token': token,
+      },
+      body: JSON.stringify(data),
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(()=>({}));
+      throw new Error(err.error || `儲存失敗 (${r.status})`);
+    }
+    ui.toast('已儲存', 'success');
+    document.getElementById('formState').style.display = 'none';
+    document.getElementById('successState').style.display = 'block';
+  } catch (err) {
+    ui.toast(err.message || '儲存失敗', 'error');
+    btn.disabled = false;
+    txt.textContent = '儲存更新';
+  }
+});
+</script>
+</body>
+</html>
