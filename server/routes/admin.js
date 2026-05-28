@@ -133,13 +133,29 @@ router.put('/people-skills/:id/approve', requireAdmin, async (req, res, next) =>
 // ---------- 服務經驗 ----------
 router.post('/service-experience', requireAdmin, async (req, res, next) => {
   try {
-    const allowed = [
-      '人員', '服務類型', '單位', '活動名稱', '開始日期', '結束日期',
-      '角色', '內容', '評語', '是否可再次邀請', '備註',
-    ];
+    const fieldMap = {
+      人員: 'Person',
+      服務類型: 'ServiceType',
+      單位: 'Organization',
+      活動名稱: 'ActivityName',
+      角色: 'Role',
+      內容: 'Content',
+      評語: 'Feedback',
+      是否可再次邀請: 'CanInviteAgain',
+      備註: 'Notes',
+    };
     const fields = {};
-    for (const k of allowed) if (req.body[k] !== undefined) fields[k] = req.body[k];
-    if (typeof fields['人員'] === 'string') fields['人員'] = [fields['人員']];
+    for (const [source, target] of Object.entries(fieldMap)) {
+      if (req.body[source] !== undefined) fields[target] = req.body[source];
+    }
+    const dateNotes = ['開始日期', '結束日期']
+      .filter(k => req.body[k])
+      .map(k => `${k}:${req.body[k]}`);
+    if (dateNotes.length > 0) {
+      fields.Notes = [fields.Notes, dateNotes.join(' / ')].filter(Boolean).join('\n');
+    }
+    if (Array.isArray(fields.Person)) fields.Person = fields.Person.join(', ');
+    fields.Name = [fields.ActivityName, fields.Person].filter(Boolean).join(' - ') || '服務經驗';
     const record = await at.createRecord(at.TABLES.SERVICE_EXPERIENCE, fields);
     res.json({ success: true, record });
   } catch (err) { next(err); }

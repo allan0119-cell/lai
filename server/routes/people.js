@@ -134,15 +134,20 @@ router.get('/:id', requireAdmin, async (req, res, next) => {
     const person = await at.getRecord(at.TABLES.PEOPLE, req.params.id);
 
     // 一併附上專長與服務經驗
-    const [skills, experience] = await Promise.all([
+    const [skills, allExperience] = await Promise.all([
       at.listRecords(at.TABLES.PEOPLE_SKILLS, {
         filterByFormula: `FIND('${req.params.id}', ARRAYJOIN({人員} & '', ',')) > 0`,
       }),
-      at.listRecords(at.TABLES.SERVICE_EXPERIENCE, {
-        filterByFormula: `FIND('${req.params.id}', ARRAYJOIN({人員} & '', ',')) > 0`,
-        sort: [{ field: '開始日期', direction: 'desc' }],
-      }),
+      at.listRecords(at.TABLES.SERVICE_EXPERIENCE),
     ]);
+
+    const experience = allExperience
+      .filter(item => {
+        const personValue = item['Person'] || item['人員'];
+        if (Array.isArray(personValue)) return personValue.map(String).includes(req.params.id);
+        return String(personValue || '') === req.params.id || String(personValue || '') === String(person['姓名'] || '');
+      })
+      .sort((a, b) => String(b['活動日期'] || b['開始日期'] || '').localeCompare(String(a['活動日期'] || a['開始日期'] || '')));
 
     res.json({ person, skills, experience });
   } catch (err) {

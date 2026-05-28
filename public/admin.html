@@ -272,9 +272,9 @@ async function viewDetail(id) {
             <h3 class="mt-3">服務經驗(${experience.length})</h3>
             ${experience.length ? `<ul>${experience.map(e => `
               <li style="padding:0.5rem 0;border-bottom:1px dashed var(--border);font-size:0.9rem;">
-                <strong>${(e.fields&&e.fields['活動名稱'])||e['活動名稱']||'—'}</strong>
-                <span class="muted-2"> · ${ui.formatDate((e.fields&&e.fields['開始日期'])||e['開始日期'])}</span>
-                ${(e.fields&&e.fields['角色'])||e['角色']?` · ${(e.fields&&e.fields['角色'])||e['角色']}`:''}
+                <strong>${(e.fields&&e.fields['活動名稱'])||e['活動名稱']||(e.fields&&e.fields['ActivityName'])||e['ActivityName']||'—'}</strong>
+                ${((e.fields&&e.fields['開始日期'])||e['開始日期']||(e.fields&&e.fields['活動日期'])||e['活動日期']) ? `<span class="muted-2"> · ${ui.formatDate((e.fields&&e.fields['開始日期'])||e['開始日期']||(e.fields&&e.fields['活動日期'])||e['活動日期'])}</span>` : ''}
+                ${(e.fields&&e.fields['角色'])||e['角色']||(e.fields&&e.fields['Role'])||e['Role']?` · ${(e.fields&&e.fields['角色'])||e['角色']||(e.fields&&e.fields['Role'])||e['Role']}`:''}
               </li>`).join('')}</ul>` : '<p class="muted">尚無資料</p>'}
           </div>
         </div>
