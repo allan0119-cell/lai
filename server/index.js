@@ -55,10 +55,20 @@ app.use('/api', needsRouter);          // 也接收 /api/matching、/api/communi
 // --- 錯誤處理 ---
 app.use((err, req, res, next) => {
   console.error('[ERROR]', err);
+  const detail = describeError(err);
   res.status(err.status || 500).json({
-    error: err.expose ? err.message : '伺服器錯誤,請稍後再試',
+    error: err.expose ? err.message : detail || '伺服器錯誤,請稍後再試',
   });
 });
+
+function describeError(err) {
+  if (!err) return '';
+  const message = [err.statusCode || err.status, err.error, err.message].filter(Boolean).join(' ');
+  if (/airtable|invalid|unknown field|field|not_found|authentication|required/i.test(message)) {
+    return message;
+  }
+  return '';
+}
 
 // --- 404 ---
 app.use((req, res) => {

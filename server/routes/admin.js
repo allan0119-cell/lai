@@ -44,11 +44,7 @@ router.post('/auth/login', async (req, res, next) => {
 // ---------- 堂區 ----------
 router.get('/parishes', async (req, res, next) => {
   try {
-    const records = await at.listRecords(at.TABLES.PARISHES, {
-      sort: [{ field: '堂區名稱', direction: 'asc' }],
-      // 對外只回傳必要欄位
-      fields: ['堂區名稱', '鐸區', '縣市'],
-    });
+    const records = await listParishesSafely();
     res.json({ records });
   } catch (err) { next(err); }
 });
@@ -76,10 +72,7 @@ router.put('/parishes/:id', requireAdmin, async (req, res, next) => {
 // ---------- 技能字典 ----------
 router.get('/skills', async (req, res, next) => {
   try {
-    const records = await at.listRecords(at.TABLES.SKILLS, {
-      filterByFormula: `{是否啟用} = TRUE()`,
-      sort: [{ field: '排序', direction: 'asc' }, { field: '專長名稱', direction: 'asc' }],
-    });
+    const records = await listSkillsSafely();
     res.json({ records });
   } catch (err) { next(err); }
 });
@@ -166,5 +159,34 @@ router.get('/reports/gaps', requireAdmin, async (req, res, next) => {
     res.json(result);
   } catch (err) { next(err); }
 });
+
+async function listParishesSafely() {
+  try {
+    return await at.listRecords(at.TABLES.PARISHES, {
+      sort: [{ field: '堂區名稱', direction: 'asc' }],
+      fields: ['堂區名稱', '鐸區', '縣市'],
+    });
+  } catch (err) {
+    console.warn('[parishes list] precise query failed, falling back:', err.message);
+    const records = await at.listRecords(at.TABLES.PARISHES);
+    return records.sort((a, b) => String(a['堂區名稱'] || '').localeCompare(String(b['堂區名稱'] || ''), 'zh-Hant'));
+  }
+}
+
+async function listSkillsSafely() {
+  try {
+    return await at.listRecords(at.TABLES.SKILLS, {
+      filterByFormula: `{是否啟用} = TRUE()`,
+      sort: [{ field: '排序', direction: 'asc' }, { field: '專長名稱', direction: 'asc' }],
+    });
+  } catch (err) {
+    console.warn('[skills list] precise query failed, falling back:', err.message);
+    const records = await at.listRecords(at.TABLES.SKILLS);
+    return records
+      .filter(record => record['是否啟用'] !== false)
+      .sort((a, b) => (a['排序'] || 0) - (b['排序'] || 0)
+        || String(a['專長名稱'] || '').localeCompare(String(b['專長名稱'] || ''), 'zh-Hant'));
+  }
+}
 
 module.exports = router;

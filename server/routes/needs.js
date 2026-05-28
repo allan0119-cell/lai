@@ -42,13 +42,7 @@ router.post('/needs', async (req, res, next) => {
 router.get('/needs', requireAdmin, async (req, res, next) => {
   try {
     const { status, urgency } = req.query;
-    const filters = {};
-    if (status) filters['狀態'] = status;
-    if (urgency) filters['急迫程度'] = urgency;
-    const records = await at.listRecords(at.TABLES.MINISTRY_NEEDS, {
-      filterByFormula: at.buildFilterFormula(filters),
-      sort: [{ field: '活動日期', direction: 'asc' }],
-    });
+    let records = await listNeedsSafely({ status, urgency });
     res.json({ count: records.length, records });
   } catch (err) { next(err); }
 });
@@ -186,6 +180,27 @@ router.get('/communication-log/:personId', requireAdmin, async (req, res, next) 
 });
 
 // --- helper ---
+async function listNeedsSafely({ status, urgency } = {}) {
+  const filters = {};
+  if (status) filters['狀態'] = status;
+  if (urgency) filters['急迫程度'] = urgency;
+
+  try {
+    return await at.listRecords(at.TABLES.MINISTRY_NEEDS, {
+      filterByFormula: at.buildFilterFormula(filters),
+      sort: [{ field: '活動日期', direction: 'asc' }],
+    });
+  } catch (err) {
+    console.warn('[needs list] precise query failed, falling back:', err.message);
+  }
+
+  const records = await at.listRecords(at.TABLES.MINISTRY_NEEDS);
+  return records
+    .filter(record => !status || record['狀態'] === status)
+    .filter(record => !urgency || record['急迫程度'] === urgency)
+    .sort((a, b) => String(a['活動日期'] || '').localeCompare(String(b['活動日期'] || '')));
+}
+
 function sanitizeNeedFields(body) {
   const allowed = [
     '需求單位', '申請人', '聯絡方式', '活動名稱', '活動日期', '地點',
