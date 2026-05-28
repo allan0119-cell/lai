@@ -33,6 +33,8 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: '姓名與手機為必填' });
     }
 
+    await resolveParishLink(body);
+
     // 不允許前端決定狀態,新增一律「待審核」
     const fields = sanitizePersonFields(body);
     fields['狀態'] = '待審核';
@@ -173,6 +175,25 @@ router.get('/:id/self-update-link', requireAdmin, async (req, res, next) => {
 });
 
 // --- helper ---
+async function resolveParishLink(body) {
+  const value = Array.isArray(body['所屬堂區']) ? body['所屬堂區'][0] : body['所屬堂區'];
+  if (!value || String(value).startsWith('rec')) return;
+
+  const parishName = String(value).trim();
+  if (!parishName) return;
+
+  const formula = at.buildFilterFormula({ '堂區名稱': parishName });
+  const existing = await at.listRecords(at.TABLES.PARISHES, {
+    filterByFormula: formula,
+    maxRecords: 1,
+  });
+  const parish = existing[0] || await at.createRecord(at.TABLES.PARISHES, {
+    '堂區名稱': parishName,
+    '備註': body['所屬教區'] ? `由人才登錄自動建立:${body['所屬教區']}` : '由人才登錄自動建立',
+  });
+  body['所屬堂區'] = [parish.id];
+}
+
 function sanitizePersonFields(body) {
   const allowed = [
     '姓名', '英文名', '性別', '出生年份', '手機', 'Email',

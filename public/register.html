@@ -115,24 +115,18 @@
     <div class="form-grid">
       <div>
         <label>所屬教區</label>
-        <select name="所屬教區">
+        <select name="所屬教區" id="dioceseSelect">
           <option value="">請選擇</option>
-          <option>台北總教區</option>
-          <option>新竹教區</option>
-          <option>台中教區</option>
-          <option>嘉義教區</option>
-          <option>台南教區</option>
-          <option>高雄教區</option>
-          <option>花蓮教區</option>
         </select>
       </div>
       <div>
         <label>所屬堂區</label>
-        <select name="所屬堂區" id="parishSelect">
-          <option value="">載入中…</option>
+        <select name="所屬堂區" id="parishSelect" disabled>
+          <option value="">請先選擇教區</option>
         </select>
       </div>
     </div>
+    <p class="form-help" id="parishHelp">請先選擇教區,系統會列出該教區可選堂區。</p>
 
     <label>所屬善會 <span class="hint">可複選</span></label>
     <div class="check-group" id="ministryGroup">
@@ -240,6 +234,52 @@
 const TW_REGIONS = ['台北市','新北市','基隆市','桃園市','新竹市','新竹縣','苗栗縣',
   '台中市','彰化縣','南投縣','雲林縣','嘉義市','嘉義縣','台南市',
   '高雄市','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣'];
+const DIOCESE_ORDER = ['台北總教區','新竹教區','台中教區','嘉義教區','台南教區','高雄教區','花蓮教區','金馬宗座署理區'];
+let parishDirectory = [];
+let airtableParishIdsByName = new Map();
+
+function setOptions(select, options, placeholder) {
+  select.innerHTML = '';
+  select.append(new Option(placeholder, ''));
+  options.forEach(option => select.append(option));
+}
+
+function optionLabel(parish) {
+  return parish.region ? `${parish.parish_name} (${parish.region})` : parish.parish_name;
+}
+
+function renderDioceses() {
+  const dioceses = [...new Set(parishDirectory.map(p => p.diocese).filter(Boolean))];
+  const ordered = DIOCESE_ORDER.filter(d => dioceses.includes(d))
+    .concat(dioceses.filter(d => !DIOCESE_ORDER.includes(d)).sort((a, b) => a.localeCompare(b, 'zh-Hant')));
+  setOptions(document.getElementById('dioceseSelect'), ordered.map(name => new Option(name, name)), '請選擇');
+}
+
+function renderParishes(diocese) {
+  const parishSelect = document.getElementById('parishSelect');
+  const help = document.getElementById('parishHelp');
+  if (!diocese) {
+    parishSelect.disabled = true;
+    setOptions(parishSelect, [], '請先選擇教區');
+    help.textContent = '請先選擇教區,系統會列出該教區可選堂區。';
+    return;
+  }
+
+  const parishes = parishDirectory
+    .filter(p => p.diocese === diocese)
+    .sort((a, b) => optionLabel(a).localeCompare(optionLabel(b), 'zh-Hant'));
+  const options = parishes.map(parish => {
+    const recordId = airtableParishIdsByName.get(parish.parish_name);
+    const option = new Option(optionLabel(parish), recordId || parish.parish_name);
+    option.dataset.parishName = parish.parish_name;
+    option.dataset.diocese = parish.diocese;
+    if (parish.region) option.dataset.region = parish.region;
+    return option;
+  });
+  parishSelect.disabled = false;
+  setOptions(parishSelect, options, '請選擇堂區');
+  help.textContent = `${diocese}目前可選 ${parishes.length} 個堂區。`;
+}
 
 (async function init() {
   document.body.insertAdjacentHTML('afterbegin', `<header class="site-header">
@@ -257,12 +297,25 @@ const TW_REGIONS = ['台北市','新北市','基隆市','桃園市','新竹市',
   });
 
   try {
-    const { records } = await api.get('/api/parishes');
-    const sel = document.getElementById('parishSelect');
-    sel.innerHTML = '<option value="">請選擇</option>' +
-      records.map(p => `<option value="${p.id}">${p['堂區名稱']}${p['縣市']?' ('+p['縣市']+')':''}</option>`).join('');
+    const response = await fetch('/data/taiwan-catholic-parishes.json');
+    if (!response.ok) throw new Error('parish data failed');
+    parishDirectory = await response.json();
+    renderDioceses();
+    document.getElementById('dioceseSelect').addEventListener('change', (event) => {
+      renderParishes(event.target.value);
+    });
   } catch (e) {
-    document.getElementById('parishSelect').innerHTML = '<option>無法載入堂區</option>';
+    document.getElementById('parishHelp').textContent = '堂區資料載入失敗,請稍後再試。';
+  }
+
+  try {
+    const { records } = await api.get('/api/parishes');
+    airtableParishIdsByName = new Map(records
+      .filter(p => p.id && p['堂區名稱'])
+      .map(p => [p['堂區名稱'], p.id]));
+    renderParishes(document.getElementById('dioceseSelect').value);
+  } catch (e) {
+    // Airtable 尚未建立堂區資料時,仍使用內建全台堂區清單供登錄。
   }
 
   try {
