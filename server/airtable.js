@@ -27,6 +27,7 @@ const TABLES = {
   MINISTRY_NEEDS: 'Ministry_Needs',
   MATCHING: 'Matching',
   COMMUNICATION_LOG: 'Communication_Log',
+  APP_SETTINGS: 'App_Settings',
 };
 
 function ensureBase() {

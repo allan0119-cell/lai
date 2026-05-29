@@ -129,8 +129,8 @@
     <p class="form-help" id="parishHelp">請先選擇教區,系統會列出該教區可選堂區。</p>
 
     <label>所屬善會 <span class="hint">自由填寫</span></label>
-    <input name="所屬善會文字" placeholder="例如:聖詠團、聖母軍、基督活力運動、禮儀組">
-    <p class="form-help">參考範例:聖詠團、聖母軍、基督活力運動、禮儀組、讀經班、青年會。若沒有參加善會可留空。</p>
+    <input name="所屬善會文字" id="ministryInput" placeholder="例如:聖詠團、聖母軍、基督活力運動、禮儀組">
+    <p class="form-help" id="ministryHelp">參考範例:聖詠團、聖母軍、基督活力運動、禮儀組、讀經班、青年會。若沒有參加善會可留空。</p>
   </div>
 
   <!-- 服務意願 -->
@@ -149,13 +149,7 @@
 
     <div class="form-row">
       <label>可服務時段 <span class="hint">可複選</span></label>
-      <div class="check-group">
-        <label class="check-item"><input type="checkbox" name="可服務時段" value="平日上午"><span>平日上午</span></label>
-        <label class="check-item"><input type="checkbox" name="可服務時段" value="平日下午"><span>平日下午</span></label>
-        <label class="check-item"><input type="checkbox" name="可服務時段" value="平日晚上"><span>平日晚上</span></label>
-        <label class="check-item"><input type="checkbox" name="可服務時段" value="週六"><span>週六</span></label>
-        <label class="check-item"><input type="checkbox" name="可服務時段" value="主日"><span>主日</span></label>
-      </div>
+      <div class="check-group" id="timeSlots"></div>
     </div>
 
     <div class="form-row" style="background:var(--success-bg);padding:1rem;border-radius:var(--radius);">
@@ -225,17 +219,58 @@
 
 <script src="/js/common.js"></script>
 <script>
-const TW_REGIONS = ['台北市','新北市','基隆市','桃園市','新竹市','新竹縣','苗栗縣',
-  '台中市','彰化縣','南投縣','雲林縣','嘉義市','嘉義縣','台南市',
-  '高雄市','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣'];
+const DEFAULT_TALENT_SETTINGS = {
+  ministryExamples: ['聖詠團','聖母軍','基督活力運動','禮儀組','讀經班','青年會'],
+  serviceRegions: ['台北市','新北市','基隆市','桃園市','新竹市','新竹縣','苗栗縣',
+    '台中市','彰化縣','南投縣','雲林縣','嘉義市','嘉義縣','台南市',
+    '高雄市','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣'],
+  timeSlots: ['平日上午','平日下午','平日晚上','週六','主日'],
+};
 const DIOCESE_ORDER = ['台北總教區','新竹教區','台中教區','嘉義教區','台南教區','高雄教區','花蓮教區','金馬宗座署理區'];
 let parishDirectory = [];
 let airtableParishIdsByName = new Map();
+let talentSettings = DEFAULT_TALENT_SETTINGS;
 
 function setOptions(select, options, placeholder) {
   select.innerHTML = '';
   select.append(new Option(placeholder, ''));
   options.forEach(option => select.append(option));
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[<>&"]/g, c => ({
+    '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;'
+  })[c]);
+}
+
+async function loadTalentSettings() {
+  try {
+    const data = await api.get('/api/settings/talent-fields');
+    talentSettings = { ...DEFAULT_TALENT_SETTINGS, ...(data.settings || {}) };
+  } catch (e) {
+    talentSettings = DEFAULT_TALENT_SETTINGS;
+  }
+  renderTalentSettings();
+}
+
+function renderTalentSettings() {
+  const examples = talentSettings.ministryExamples || DEFAULT_TALENT_SETTINGS.ministryExamples;
+  const regions = talentSettings.serviceRegions || DEFAULT_TALENT_SETTINGS.serviceRegions;
+  const timeSlots = talentSettings.timeSlots || DEFAULT_TALENT_SETTINGS.timeSlots;
+  document.getElementById('ministryInput').placeholder = `例如:${examples.slice(0, 4).join('、')}`;
+  document.getElementById('ministryHelp').textContent = `參考範例:${examples.join('、')}。若沒有參加善會可留空。`;
+
+  const liveSel = document.getElementById('liveRegion');
+  const serviceDiv = document.getElementById('serviceRegion');
+  liveSel.innerHTML = '<option value="">請選擇</option>';
+  serviceDiv.innerHTML = regions.map(r =>
+    `<label class="check-item"><input type="checkbox" name="可服務區域" value="${escapeHtml(r)}"><span>${escapeHtml(r)}</span></label>`
+  ).join('');
+  regions.forEach(r => liveSel.insertAdjacentHTML('beforeend', `<option>${escapeHtml(r)}</option>`));
+
+  document.getElementById('timeSlots').innerHTML = timeSlots.map(t =>
+    `<label class="check-item"><input type="checkbox" name="可服務時段" value="${escapeHtml(t)}"><span>${escapeHtml(t)}</span></label>`
+  ).join('');
 }
 
 function optionLabel(parish) {
@@ -282,13 +317,7 @@ function renderParishes(diocese) {
   </header>`);
   document.body.insertAdjacentHTML('beforeend', ui.renderFooter());
 
-  const liveSel = document.getElementById('liveRegion');
-  const serviceDiv = document.getElementById('serviceRegion');
-  TW_REGIONS.forEach(r => {
-    liveSel.insertAdjacentHTML('beforeend', `<option>${r}</option>`);
-    serviceDiv.insertAdjacentHTML('beforeend',
-      `<label class="check-item"><input type="checkbox" name="可服務區域" value="${r}"><span>${r}</span></label>`);
-  });
+  await loadTalentSettings();
 
   try {
     const response = await fetch('/data/taiwan-catholic-parishes.json');

@@ -17,6 +17,7 @@ const router = express.Router();
 const at = require('../airtable');
 const { requireAdmin, signSelfUpdateToken, verifySelfUpdateToken } = require('../middleware/auth');
 const { normalizeSkillsAndPersist } = require('../services/invitation');
+const { getTalentSettings } = require('../services/settings');
 
 // ---------- 公開:教友登錄 ----------
 router.post('/', async (req, res, next) => {
@@ -35,9 +36,10 @@ router.post('/', async (req, res, next) => {
 
     await resolveParishLink(body);
 
-    // 不允許前端決定狀態,新增一律「待審核」
+    // 不允許前端決定狀態,新增狀態由後臺設定決定。
     const fields = sanitizePersonFields(body);
-    fields['狀態'] = '待審核';
+    const settings = await getTalentSettings();
+    fields['狀態'] = settings.defaultPersonStatus;
     fields['建立日期'] = new Date().toISOString();
     fields['更新日期'] = new Date().toISOString();
 
@@ -141,6 +143,18 @@ router.get('/:id', requireAdmin, async (req, res, next) => {
       at.listRecords(at.TABLES.SERVICE_EXPERIENCE),
     ]);
 
+    const skillRecords = await Promise.all(
+      [...new Set(skills.flatMap(item => item['專長'] || []))]
+        .map(id => at.getRecord(at.TABLES.SKILLS, id).catch(() => null))
+    );
+    const skillNameById = Object.fromEntries(
+      skillRecords.filter(Boolean).map(skill => [skill.id, skill['專長名稱'] || skill.id])
+    );
+    const enrichedSkills = skills.map(item => ({
+      ...item,
+      專長名稱: (item['專長'] || []).map(id => skillNameById[id] || id).join('、'),
+    }));
+
     const experience = allExperience
       .filter(item => {
         const personValue = item['Person'] || item['人員'];
@@ -149,7 +163,7 @@ router.get('/:id', requireAdmin, async (req, res, next) => {
       })
       .sort((a, b) => String(b['活動日期'] || b['開始日期'] || '').localeCompare(String(a['活動日期'] || a['開始日期'] || '')));
 
-    res.json({ person, skills, experience });
+    res.json({ person, skills: enrichedSkills, experience });
   } catch (err) {
     next(err);
   }
@@ -160,6 +174,28 @@ router.put('/:id', requireAdmin, async (req, res, next) => {
   try {
     const fields = sanitizePersonFields(req.body || {});
     fields['更新日期'] = new Date().toISOString();
+    const record = await at.updateRecord(at.TABLES.PEOPLE, req.params.id, fields);
+    res.json({ success: true, record });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------- 管理:更新人才狀態 ----------
+router.put('/:id/status', requireAdmin, async (req, res, next) => {
+  try {
+    const status = String((req.body && req.body.status) || '').trim();
+    const allowed = ['待審核', '已啟用', '暫停', '退出'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ error: `狀態必須是:${allowed.join('、')}` });
+    }
+    const fields = {
+      '狀態': status,
+      '更新日期': new Date().toISOString(),
+    };
+    if (req.body && typeof req.body['是否願意接受邀請'] === 'boolean') {
+      fields['是否願意接受邀請'] = req.body['是否願意接受邀請'];
+    }
     const record = await at.updateRecord(at.TABLES.PEOPLE, req.params.id, fields);
     res.json({ success: true, record });
   } catch (err) {

@@ -17,6 +17,7 @@ const router = express.Router();
 const at = require('../airtable');
 const { requireAdmin, signAdminToken } = require('../middleware/auth');
 const { distributionReport, gapReport } = require('../services/reports');
+const { getTalentSettings, saveTalentSettings } = require('../services/settings');
 
 // ---------- 登入 ----------
 router.post('/auth/login', async (req, res, next) => {
@@ -77,6 +78,13 @@ router.get('/skills', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.get('/skills-admin', requireAdmin, async (req, res, next) => {
+  try {
+    const records = await listAllSkillsSafely();
+    res.json({ records });
+  } catch (err) { next(err); }
+});
+
 router.post('/skills', requireAdmin, async (req, res, next) => {
   try {
     const allowed = ['專長名稱', '分類', '說明', '排序', '是否啟用'];
@@ -95,6 +103,21 @@ router.put('/skills/:id', requireAdmin, async (req, res, next) => {
     for (const k of allowed) if (req.body[k] !== undefined) fields[k] = req.body[k];
     const record = await at.updateRecord(at.TABLES.SKILLS, req.params.id, fields);
     res.json({ success: true, record });
+  } catch (err) { next(err); }
+});
+
+// ---------- 前臺人才欄位設定 ----------
+router.get('/settings/talent-fields', async (req, res, next) => {
+  try {
+    const settings = await getTalentSettings();
+    res.json({ settings });
+  } catch (err) { next(err); }
+});
+
+router.put('/settings/talent-fields', requireAdmin, async (req, res, next) => {
+  try {
+    const settings = await saveTalentSettings(req.body || {});
+    res.json({ success: true, settings });
   } catch (err) { next(err); }
 });
 
@@ -124,7 +147,7 @@ router.put('/people-skills/:id/approve', requireAdmin, async (req, res, next) =>
     }
     const record = await at.updateRecord(at.TABLES.PEOPLE_SKILLS, req.params.id, {
       '審核狀態': decision,
-      '審核人': reviewer || (req.user && req.user.sub) || 'admin',
+      '審核者': reviewer || (req.user && req.user.sub) || 'admin',
     });
     res.json({ success: true, record });
   } catch (err) { next(err); }
@@ -202,6 +225,19 @@ async function listSkillsSafely() {
       .filter(record => record['是否啟用'] !== false)
       .sort((a, b) => (a['排序'] || 0) - (b['排序'] || 0)
         || String(a['專長名稱'] || '').localeCompare(String(b['專長名稱'] || ''), 'zh-Hant'));
+  }
+}
+
+async function listAllSkillsSafely() {
+  try {
+    return await at.listRecords(at.TABLES.SKILLS, {
+      sort: [{ field: '排序', direction: 'asc' }, { field: '專長名稱', direction: 'asc' }],
+    });
+  } catch (err) {
+    console.warn('[skills admin list] precise query failed, falling back:', err.message);
+    const records = await at.listRecords(at.TABLES.SKILLS);
+    return records.sort((a, b) => (a['排序'] || 0) - (b['排序'] || 0)
+      || String(a['專長名稱'] || '').localeCompare(String(b['專長名稱'] || ''), 'zh-Hant'));
   }
 }
 

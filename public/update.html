@@ -107,13 +107,7 @@
 
       <div class="form-row mt-3">
         <label>可服務時段 <span class="hint">可複選</span></label>
-        <div class="check-group" id="f_timeslots">
-          <label class="check-item"><input type="checkbox" name="可服務時段" value="平日上午"><span>平日上午</span></label>
-          <label class="check-item"><input type="checkbox" name="可服務時段" value="平日下午"><span>平日下午</span></label>
-          <label class="check-item"><input type="checkbox" name="可服務時段" value="平日晚上"><span>平日晚上</span></label>
-          <label class="check-item"><input type="checkbox" name="可服務時段" value="週六"><span>週六</span></label>
-          <label class="check-item"><input type="checkbox" name="可服務時段" value="主日"><span>主日</span></label>
-        </div>
+        <div class="check-group" id="f_timeslots"></div>
       </div>
 
       <div class="form-row">
@@ -157,13 +151,17 @@
 
 <script src="/js/common.js"></script>
 <script>
-const TW_REGIONS = ['台北市','新北市','基隆市','桃園市','新竹市','新竹縣','苗栗縣',
-  '台中市','彰化縣','南投縣','雲林縣','嘉義市','嘉義縣','台南市',
-  '高雄市','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣'];
+const DEFAULT_TALENT_SETTINGS = {
+  serviceRegions: ['台北市','新北市','基隆市','桃園市','新竹市','新竹縣','苗栗縣',
+    '台中市','彰化縣','南投縣','雲林縣','嘉義市','嘉義縣','台南市',
+    '高雄市','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣'],
+  timeSlots: ['平日上午','平日下午','平日晚上','週六','主日'],
+};
 
 const params = new URLSearchParams(location.search);
 const personId = params.get('id');
 const token = params.get('t');
+let talentSettings = DEFAULT_TALENT_SETTINGS;
 
 document.body.insertAdjacentHTML('afterbegin', `<header class="site-header">
   <h1><span class="logo-mark">${ui.icon('cross', 16)}</span><span>更新服務意願</span></h1>
@@ -176,6 +174,32 @@ function showError(msg) {
   document.getElementById('formState').style.display = 'none';
   document.getElementById('errorState').style.display = 'block';
   if (msg) document.getElementById('errorMsg').textContent = msg;
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[<>&"]/g, c => ({
+    '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;'
+  })[c]);
+}
+
+async function loadTalentSettings() {
+  try {
+    const data = await api.get('/api/settings/talent-fields');
+    talentSettings = { ...DEFAULT_TALENT_SETTINGS, ...(data.settings || {}) };
+  } catch (e) {
+    talentSettings = DEFAULT_TALENT_SETTINGS;
+  }
+}
+
+function renderTalentSettings() {
+  const regions = talentSettings.serviceRegions || DEFAULT_TALENT_SETTINGS.serviceRegions;
+  const timeSlots = talentSettings.timeSlots || DEFAULT_TALENT_SETTINGS.timeSlots;
+  document.getElementById('f_regions').innerHTML = regions.map(r =>
+    `<label class="check-item"><input type="checkbox" name="可服務區域" value="${escapeHtml(r)}"><span>${escapeHtml(r)}</span></label>`
+  ).join('');
+  document.getElementById('f_timeslots').innerHTML = timeSlots.map(t =>
+    `<label class="check-item"><input type="checkbox" name="可服務時段" value="${escapeHtml(t)}"><span>${escapeHtml(t)}</span></label>`
+  ).join('');
 }
 
 function toggleWilling() {
@@ -197,11 +221,8 @@ function toggleWilling() {
     return;
   }
 
-  // 渲染地區 checkbox
-  const regionsEl = document.getElementById('f_regions');
-  regionsEl.innerHTML = TW_REGIONS.map(r =>
-    `<label class="check-item"><input type="checkbox" name="可服務區域" value="${r}"><span>${r}</span></label>`
-  ).join('');
+  await loadTalentSettings();
+  renderTalentSettings();
 
   // 用 token 載入個人資料
   try {
