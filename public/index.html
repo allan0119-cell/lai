@@ -311,6 +311,65 @@
     min-height: 3.5em;
   }
 
+  /* ====== 查詢人才 ====== */
+  .talent-search {
+    margin-bottom: 3.5rem;
+  }
+  .talent-search-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-xs);
+  }
+  .talent-search-grid {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.3fr) minmax(150px, 1fr) minmax(150px, 1fr) auto;
+    gap: 0.875rem;
+    align-items: end;
+  }
+  .talent-results {
+    margin-top: 1.25rem;
+  }
+  .talent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+  .talent-card {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+  }
+  .talent-card h4 {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+  .talent-meta {
+    color: var(--muted);
+    font-size: 0.86rem;
+    line-height: 1.7;
+    margin-bottom: 0.625rem;
+  }
+  .talent-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  .talent-tag {
+    display: inline-flex;
+    align-items: center;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.78rem;
+    color: var(--text-soft);
+  }
+
   /* ====== 三步驟 ====== */
   .steps-section {
     background: linear-gradient(180deg, transparent 0%, var(--bg-soft) 30%, var(--bg-soft) 70%, transparent 100%);
@@ -457,6 +516,7 @@
     .scripture-frame p { font-size: 1rem; }
     .hero-cta { flex-direction: column; width: 100%; }
     .hero-cta .btn { width: 100%; }
+    .talent-search-grid { grid-template-columns: 1fr; }
     .steps-section { padding: 2rem 0; }
   }
 
@@ -515,15 +575,6 @@
       </p>
     </div>
 
-    <!-- 主 CTA -->
-    <div class="hero-cta">
-      <a href="/register.html" class="btn btn-lg" id="cta1">
-        <span id="cta1-icon"></span> 我是教友 · 登錄服務
-      </a>
-      <a href="/needs.html" class="btn btn-lg btn-gold" id="cta2">
-        <span id="cta2-icon"></span> 我是堂區 · 提交需求
-      </a>
-    </div>
   </section>
 
   <!-- ============ 飾邊 ============ -->
@@ -595,6 +646,44 @@
         <h3>我是堂區 / 善會</h3>
         <p class="role-desc">活動需要人手協助?提交需求單,系統會自動為您推薦最合適的服務人選。</p>
         <a href="/needs.html" class="btn btn-block btn-gold">提交需求</a>
+      </div>
+
+      <div class="role-card" onclick="document.getElementById('talentSearch').scrollIntoView({behavior:'smooth'})">
+        <div class="role-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+          </svg>
+        </div>
+        <h3>查詢人才</h3>
+        <p class="role-desc">查詢已由後臺核准啟用的人才,依關鍵字、服務區域或時段找到合適人選。</p>
+        <button type="button" class="btn btn-block">開始查詢</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 查詢人才 ============ -->
+  <section class="talent-search" id="talentSearch">
+    <h2 class="section-title">查詢人才</h2>
+    <p class="section-subtitle">僅顯示後臺狀態為「已啟用」的人才；聯絡方式由管理者保護與協助聯繫。</p>
+    <div class="talent-search-panel">
+      <form id="publicTalentForm" class="talent-search-grid">
+        <div>
+          <label>關鍵字</label>
+          <input name="keyword" placeholder="姓名、善會、背景描述">
+        </div>
+        <div>
+          <label>可服務區域</label>
+          <select name="area" id="publicTalentArea"><option value="">全部區域</option></select>
+        </div>
+        <div>
+          <label>可服務時段</label>
+          <select name="time" id="publicTalentTime"><option value="">全部時段</option></select>
+        </div>
+        <button type="submit">查詢</button>
+      </form>
+      <div id="publicTalentResults" class="talent-results">
+        <p class="muted">請輸入條件後查詢，或直接按查詢查看已啟用人才。</p>
       </div>
     </div>
   </section>
@@ -675,12 +764,103 @@
 
 <script src="/js/common.js"></script>
 <script>
+  const DEFAULT_TALENT_SETTINGS = {
+    serviceRegions: ['台北市','新北市','基隆市','桃園市','新竹市','新竹縣','苗栗縣',
+      '台中市','彰化縣','南投縣','雲林縣','嘉義市','嘉義縣','台南市',
+      '高雄市','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣'],
+    timeSlots: ['平日上午','平日下午','平日晚上','週六','主日'],
+  };
+
   // 注入 footer
   document.body.insertAdjacentHTML('beforeend', ui.renderFooter());
 
-  // 注入 CTA 圖示
-  document.getElementById('cta1-icon').innerHTML = ui.icon('user', 18);
-  document.getElementById('cta2-icon').innerHTML = ui.icon('users', 18);
+  initTalentSearch();
+
+  async function initTalentSearch() {
+    await loadTalentOptions();
+    document.getElementById('publicTalentForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      await searchPublicTalents();
+    });
+  }
+
+  async function loadTalentOptions() {
+    let settings = DEFAULT_TALENT_SETTINGS;
+    try {
+      const data = await api.get('/api/settings/talent-fields');
+      settings = { ...DEFAULT_TALENT_SETTINGS, ...(data.settings || {}) };
+    } catch (e) {
+      settings = DEFAULT_TALENT_SETTINGS;
+    }
+    fillSelect('publicTalentArea', settings.serviceRegions || DEFAULT_TALENT_SETTINGS.serviceRegions, '全部區域');
+    fillSelect('publicTalentTime', settings.timeSlots || DEFAULT_TALENT_SETTINGS.timeSlots, '全部時段');
+  }
+
+  function fillSelect(id, values, placeholder) {
+    const select = document.getElementById(id);
+    select.innerHTML = `<option value="">${placeholder}</option>`;
+    values.forEach(value => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      select.appendChild(option);
+    });
+  }
+
+  async function searchPublicTalents() {
+    const fd = new FormData(document.getElementById('publicTalentForm'));
+    const params = new URLSearchParams();
+    ['keyword', 'area', 'time'].forEach(key => {
+      const value = String(fd.get(key) || '').trim();
+      if (value) params.set(key, value);
+    });
+    ui.loading('publicTalentResults', '正在查詢已啟用人才…');
+    try {
+      const { count, records } = await api.get('/api/people/public/search?' + params.toString());
+      renderPublicTalents(count, records || []);
+    } catch (err) {
+      ui.empty('publicTalentResults', '查詢失敗:' + err.message, 'warn');
+    }
+  }
+
+  function renderPublicTalents(count, records) {
+    const target = document.getElementById('publicTalentResults');
+    if (!count) {
+      ui.empty(target, '目前沒有符合條件的已啟用人才', 'search');
+      return;
+    }
+    target.innerHTML = `
+      <p class="muted mb-2">共找到 <strong>${count}</strong> 位已啟用人才</p>
+      <div class="talent-grid">
+        ${records.map(person => `
+          <article class="talent-card">
+            <h4>${escapeHtml(person['姓名'] || '未具名')}${person['英文名'] ? ` <span class="muted-2">(${escapeHtml(person['英文名'])})</span>` : ''}</h4>
+            <div class="talent-meta">
+              ${person['所屬教區'] ? `教區:${escapeHtml(person['所屬教區'])}<br>` : ''}
+              ${person['所屬堂區文字'] ? `堂區:${escapeHtml(person['所屬堂區文字'])}<br>` : ''}
+              ${person['所屬善會文字'] ? `善會:${escapeHtml(person['所屬善會文字'])}` : ''}
+            </div>
+            ${renderTags('專長', person['專長'])}
+            ${renderTags('區域', person['可服務區域'])}
+            ${renderTags('時段', person['可服務時段'])}
+          </article>
+        `).join('')}
+      </div>`;
+  }
+
+  function renderTags(label, values) {
+    const list = Array.isArray(values) ? values.filter(Boolean) : [];
+    if (!list.length) return '';
+    return `<div class="talent-tags" aria-label="${label}">${list.map(value =>
+      `<span class="talent-tag">${escapeHtml(value)}</span>`
+    ).join('')}</div>`;
+  }
+
+  function escapeHtml(value) {
+    return String(value || '').replace(/[<>&"]/g, c => ({
+      '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;'
+    })[c]);
+  }
 </script>
 </body>
 </html>

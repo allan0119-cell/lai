@@ -130,6 +130,34 @@ router.get('/', requireAdmin, async (req, res, next) => {
   }
 });
 
+// ---------- 公開:查詢已啟用人才 ----------
+router.get('/public/search', async (req, res, next) => {
+  try {
+    const { keyword, area, time } = req.query;
+    const filters = { 狀態: '已啟用' };
+    if (area) filters['可服務區域'] = String(area).split(',').filter(Boolean);
+    if (time) filters['可服務時段'] = String(time).split(',').filter(Boolean);
+
+    let formula = at.buildFilterFormula(filters);
+    if (keyword) {
+      const kw = String(keyword).replace(/'/g, "\\'");
+      const kwClause = `OR(SEARCH('${kw}', {姓名} & ''), SEARCH('${kw}', {所屬善會文字} & ''), SEARCH('${kw}', {信仰背景簡述} & ''))`;
+      formula = formula ? `AND(${formula}, ${kwClause})` : kwClause;
+    }
+
+    const people = await at.listRecords(at.TABLES.PEOPLE, {
+      filterByFormula: formula,
+      sort: [{ field: '更新日期', direction: 'desc' }],
+      maxRecords: 50,
+    });
+    const skillsByPersonId = await getApprovedSkillNamesForPeople(people);
+    const records = people.map(person => publicPerson(person, skillsByPersonId[person.id] || []));
+    res.json({ count: records.length, records });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ---------- 管理:單筆 ----------
 router.get('/:id', requireAdmin, async (req, res, next) => {
   try {
@@ -332,6 +360,48 @@ function sanitizePersonFields(body) {
   // 「所屬堂區」如果有傳是 record id 字串,要轉成陣列(Linked field)
   if (typeof out['所屬堂區'] === 'string') out['所屬堂區'] = [out['所屬堂區']];
   return out;
+}
+
+async function getApprovedSkillNamesForPeople(people) {
+  if (!people.length) return {};
+  try {
+    const [peopleSkills, skills] = await Promise.all([
+      at.listRecords(at.TABLES.PEOPLE_SKILLS, {
+        filterByFormula: `AND({審核狀態} = '通過', {是否願意服務} = TRUE())`,
+      }),
+      at.listRecords(at.TABLES.SKILLS),
+    ]);
+    const peopleIds = new Set(people.map(person => person.id));
+    const skillNameById = Object.fromEntries(skills.map(skill => [skill.id, skill['專長名稱'] || skill.id]));
+    const byPerson = {};
+    for (const item of peopleSkills) {
+      const linkedPeople = (item['人員'] || []).map(String).filter(id => peopleIds.has(id));
+      const linkedSkills = (item['專長'] || []).map(id => skillNameById[id] || item['專長文字'] || id);
+      for (const personId of linkedPeople) {
+        byPerson[personId] = [...new Set([...(byPerson[personId] || []), ...linkedSkills].filter(Boolean))];
+      }
+    }
+    return byPerson;
+  } catch (err) {
+    console.warn('[public people skills] failed:', err.message);
+    return {};
+  }
+}
+
+function publicPerson(person, skills) {
+  return {
+    id: person.id,
+    姓名: person['姓名'],
+    英文名: person['英文名'],
+    所屬教區: person['所屬教區'],
+    所屬堂區文字: person['所屬堂區文字'],
+    所屬善會文字: person['所屬善會文字'],
+    居住地區: person['居住地區'],
+    可服務區域: person['可服務區域'] || [],
+    可服務時段: person['可服務時段'] || [],
+    信仰背景簡述: person['信仰背景簡述'],
+    專長: skills,
+  };
 }
 
 module.exports = router;
