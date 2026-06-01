@@ -351,11 +351,14 @@ function sanitizePersonFields(body) {
   const allowed = [
     '姓名', '英文名', '性別', '出生年份', '手機', 'Email',
     '所屬教區', '所屬堂區', '所屬善會文字', '所屬善會', '居住地區', '可服務區域',
-    '可服務時段', '是否願意接受邀請', '信仰背景簡述', '備註',
+    '可服務時段', '是否願意接受邀請', '信仰背景簡述', '名片圖檔資料', '備註',
   ];
   const out = {};
   for (const k of allowed) {
     if (body[k] !== undefined) out[k] = body[k];
+  }
+  if (out['名片圖檔資料'] && !/^data:image\/jpe?g;base64,/i.test(out['名片圖檔資料'])) {
+    delete out['名片圖檔資料'];
   }
   // 「所屬堂區」如果有傳是 record id 字串,要轉成陣列(Linked field)
   if (typeof out['所屬堂區'] === 'string') out['所屬堂區'] = [out['所屬堂區']];

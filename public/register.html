@@ -58,6 +58,29 @@
     margin-top: 0.875rem;
     background: white;
   }
+  .upload-preview {
+    display: none;
+    margin-top: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem;
+    background: var(--bg-soft);
+  }
+  .upload-preview img {
+    display: block;
+    width: 100%;
+    max-width: 360px;
+    max-height: 220px;
+    object-fit: contain;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: white;
+  }
+  .upload-preview .meta {
+    margin-top: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
 </style>
 </head>
 <body>
@@ -104,6 +127,15 @@
       <div>
         <label>Email <span class="hint">建議填寫,接收通知</span></label>
         <input type="email" name="Email" autocomplete="email">
+      </div>
+      <div>
+        <label>名片圖檔 <span class="hint">選填</span></label>
+        <input type="file" id="businessCardFile" accept="image/*">
+        <p class="form-help">可上傳名片照片或截圖,系統會自動壓縮後送出。</p>
+        <div class="upload-preview" id="businessCardPreview">
+          <img alt="名片預覽" id="businessCardPreviewImg">
+          <div class="meta" id="businessCardPreviewMeta"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -231,6 +263,7 @@ const DIOCESE_ORDER = ['台北總教區','新竹教區','台中教區','嘉義�
 let parishDirectory = [];
 let airtableParishIdsByName = new Map();
 let talentSettings = DEFAULT_TALENT_SETTINGS;
+let compressedBusinessCard = '';
 
 function setOptions(select, options, placeholder) {
   select.innerHTML = '';
@@ -242,6 +275,64 @@ function escapeHtml(value) {
   return String(value || '').replace(/[<>&"]/g, c => ({
     '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;'
   })[c]);
+}
+
+document.getElementById('businessCardFile').addEventListener('change', async (event) => {
+  const file = event.target.files && event.target.files[0];
+  const preview = document.getElementById('businessCardPreview');
+  const img = document.getElementById('businessCardPreviewImg');
+  const meta = document.getElementById('businessCardPreviewMeta');
+  compressedBusinessCard = '';
+  preview.style.display = 'none';
+  img.removeAttribute('src');
+  meta.textContent = '';
+
+  if (!file) return;
+  try {
+    compressedBusinessCard = await compressBusinessCard(file);
+    img.src = compressedBusinessCard;
+    meta.textContent = `${file.name} 已壓縮完成`;
+    preview.style.display = 'block';
+  } catch (err) {
+    event.target.value = '';
+    ui.toast(err.message, 'error');
+  }
+});
+
+async function compressBusinessCard(file) {
+  if (!file.type.startsWith('image/')) throw new Error('請選擇圖片檔');
+  if (file.size > 5 * 1024 * 1024) throw new Error('名片圖檔請小於 5MB');
+
+  const image = await loadImageFromFile(file);
+  const maxWidth = 900;
+  const scale = Math.min(1, maxWidth / image.width);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(image.width * scale));
+  canvas.height = Math.max(1, Math.round(image.height * scale));
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+  for (const quality of [0.72, 0.62, 0.52, 0.42]) {
+    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+    if (dataUrl.length <= 90000) return dataUrl;
+  }
+  throw new Error('名片圖檔仍然太大,請改用較小或較清楚裁切的圖片');
+}
+
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('名片圖檔讀取失敗'));
+      image.src = reader.result;
+    };
+    reader.onerror = () => reject(new Error('名片圖檔讀取失敗'));
+    reader.readAsDataURL(file);
+  });
 }
 
 async function loadTalentSettings() {
@@ -369,6 +460,7 @@ document.getElementById('form').addEventListener('submit', async (e) => {
   ['姓名','英文名','性別','出生年份','手機','Email','所屬教區','所屬善會文字','居住地區','信仰背景簡述','備註']
     .forEach(k => { const v = fd.get(k); if (v) data[k] = v; });
   if (data['出生年份']) data['出生年份'] = parseInt(data['出生年份'], 10);
+  if (compressedBusinessCard) data['名片圖檔資料'] = compressedBusinessCard;
 
   data['可服務區域'] = fd.getAll('可服務區域');
   data['可服務時段'] = fd.getAll('可服務時段');

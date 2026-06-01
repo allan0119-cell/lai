@@ -102,6 +102,17 @@
     flex-wrap: wrap;
     margin-left: 0.5rem;
   }
+  .business-card-image {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    max-height: 260px;
+    object-fit: contain;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: white;
+    margin-top: 0.5rem;
+  }
 </style>
 </head>
 <body>
@@ -372,6 +383,7 @@ async function viewDetail(id) {
               <div class="info-row"><span class="label">願意邀請</span><span class="val">${p['是否願意接受邀請']?ui.badge('願意'):ui.badge('否')}</span></div>
               <div class="info-row"><span class="label">可服務時段</span><span class="val">${(p['可服務時段']||[]).map(t=>`<span class="chip">${t}</span>`).join('')||'—'}</span></div>
               <div class="info-row"><span class="label">所屬善會</span><span class="val">${escape(p['所屬善會文字']||'') || (p['所屬善會']||[]).map(t=>`<span class="chip">${t}</span>`).join('') || '—'}</span></div>
+              <div class="info-row"><span class="label">名片圖檔</span><span class="val">${renderBusinessCard(p['名片圖檔資料'])}</span></div>
               <div class="info-row"><span class="label">備註</span><span class="val">${escape(p['備註']||'—')}</span></div>
             </div>
 
@@ -544,6 +556,11 @@ async function createSelfUpdateLink(id) {
 
 function lines(value) {
   return String(value || '').split(/\r?\n|,|，|、/).map(s => s.trim()).filter(Boolean);
+}
+
+function renderBusinessCard(value) {
+  if (!value || !/^data:image\/jpe?g;base64,/i.test(value)) return '—';
+  return `<img class="business-card-image" src="${value}" alt="名片圖檔">`;
 }
 
 function closeModal() {
