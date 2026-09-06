@@ -135,6 +135,7 @@
         <div class="upload-preview" id="businessCardPreview">
           <img alt="名片預覽" id="businessCardPreviewImg">
           <div class="meta" id="businessCardPreviewMeta"></div>
+          <button type="button" class="btn-secondary btn-sm" onclick="clearBusinessCard()">移除名片</button>
         </div>
       </div>
     </div>
@@ -264,6 +265,15 @@ let parishDirectory = [];
 let airtableParishIdsByName = new Map();
 let talentSettings = DEFAULT_TALENT_SETTINGS;
 let compressedBusinessCard = '';
+let businessCardVersion = 0;
+
+function clearBusinessCard() {
+  businessCardVersion++;
+  compressedBusinessCard = '';
+  document.getElementById('businessCardFile').value = '';
+  document.getElementById('businessCardPreview').style.display = 'none';
+  document.getElementById('businessCardPreviewImg').removeAttribute('src');
+}
 
 function setOptions(select, options, placeholder) {
   select.innerHTML = '';
@@ -279,6 +289,7 @@ function escapeHtml(value) {
 
 document.getElementById('businessCardFile').addEventListener('change', async (event) => {
   const file = event.target.files && event.target.files[0];
+  const version = ++businessCardVersion;
   const preview = document.getElementById('businessCardPreview');
   const img = document.getElementById('businessCardPreviewImg');
   const meta = document.getElementById('businessCardPreviewMeta');
@@ -289,7 +300,9 @@ document.getElementById('businessCardFile').addEventListener('change', async (ev
 
   if (!file) return;
   try {
-    compressedBusinessCard = await compressBusinessCard(file);
+    const result = await compressBusinessCard(file);
+    if (version !== businessCardVersion) return;
+    compressedBusinessCard = result;
     img.src = compressedBusinessCard;
     meta.textContent = `${file.name} 已壓縮完成`;
     preview.style.display = 'block';
@@ -450,6 +463,10 @@ function renderParishes(diocese) {
 
 document.getElementById('form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  if (document.getElementById('businessCardFile').files.length && !compressedBusinessCard) {
+    ui.toast('名片處理中，請稍候再送出', 'info');
+    return;
+  }
   const btn = document.getElementById('submitBtn');
   const txt = document.getElementById('submitText');
   btn.disabled = true;

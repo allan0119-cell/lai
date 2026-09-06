@@ -34,6 +34,11 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: '姓名與手機為必填' });
     }
 
+    const phone = String(body['手機']).replace(/[\s()+-]/g, '').replace(/^886/, '0');
+    const existingPeople = await at.listRecords(at.TABLES.PEOPLE, { fields: ['手機'] });
+    if (existingPeople.some(person => String(person['手機'] || '').replace(/[\s()+-]/g, '').replace(/^886/, '0') === phone)) {
+      return res.status(409).json({ error: '此手機號碼已登錄，請聯絡管理者確認資料或取得更新連結。' });
+    }
     await resolveParishLink(body);
 
     // 不允許前端決定狀態,新增狀態由後臺設定決定。
@@ -133,7 +138,9 @@ router.get('/', requireAdmin, async (req, res, next) => {
 // ---------- 公開:查詢已啟用人才 ----------
 router.get('/public/search', async (req, res, next) => {
   try {
-    const { keyword, area, time } = req.query;
+    const { keyword, area, time, skill } = req.query;
+    const requestedPage = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const pageSize = 12;
     const filters = { 狀態: '已啟用' };
     if (area) filters['可服務區域'] = String(area).split(',').filter(Boolean);
     if (time) filters['可服務時段'] = String(time).split(',').filter(Boolean);
@@ -148,11 +155,16 @@ router.get('/public/search', async (req, res, next) => {
     const people = await at.listRecords(at.TABLES.PEOPLE, {
       filterByFormula: formula,
       sort: [{ field: '更新日期', direction: 'desc' }],
-      maxRecords: 50,
     });
     const skillsByPersonId = await getApprovedSkillNamesForPeople(people);
-    const records = people.map(person => publicPerson(person, skillsByPersonId[person.id] || []));
-    res.json({ count: records.length, records });
+    const filtered = people.filter(person => person['狀態'] === '已啟用')
+      .map(person => publicPerson(person, skillsByPersonId[person.id] || []))
+      .filter(person => !skill || person['專長'].includes(String(skill)));
+    const count = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(count / pageSize));
+    const page = Math.min(requestedPage, totalPages);
+    const records = filtered.slice((page - 1) * pageSize, page * pageSize);
+    res.json({ count, records, page, totalPages, pageSize });
   } catch (err) {
     next(err);
   }
@@ -357,8 +369,11 @@ function sanitizePersonFields(body) {
   for (const k of allowed) {
     if (body[k] !== undefined) out[k] = body[k];
   }
-  if (out['名片圖檔資料'] && !/^data:image\/jpe?g;base64,/i.test(out['名片圖檔資料'])) {
-    delete out['名片圖檔資料'];
+  if (out['名片圖檔資料'] && (typeof out['名片圖檔資料'] !== 'string' || out['名片圖檔資料'].length > 90000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(out['名片圖檔資料']))) {
+    const error = new Error('名片圖片格式或大小不正確');
+    error.status = 400;
+    error.expose = true;
+    throw error;
   }
   // 「所屬堂區」如果有傳是 record id 字串,要轉成陣列(Linked field)
   if (typeof out['所屬堂區'] === 'string') out['所屬堂區'] = [out['所屬堂區']];

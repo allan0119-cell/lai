@@ -119,6 +119,8 @@
 
 <div class="container container-wide">
 <div id="flash"></div>
+<nav class="toolbar" aria-label="人才管理分區"><button type="button" onclick="showPeopleSection(true)">待審核專區</button><button type="button" class="btn-secondary" onclick="showPeopleSection(false)">全部人才</button></nav>
+<h2 id="peopleSectionTitle">全部人才</h2>
 
 <div class="card">
   <h2>查詢條件</h2>
@@ -293,7 +295,15 @@ document.getElementById('skillForm').addEventListener('submit', async (e) => {
   await createSkill();
 });
 
-async function search() {
+function showPeopleSection(pending) {
+  const form = document.getElementById('filters');
+  form.reset();
+  form.elements.status.value = pending ? '待審核' : '';
+  document.getElementById('peopleSectionTitle').textContent = pending ? '待審核專區' : '全部人才';
+  search();
+}
+
+async function search(page = 1) {
   const fd = new FormData(document.getElementById('filters'));
   const params = new URLSearchParams();
   ['keyword','parish','status','willing','area','time'].forEach(k => {
@@ -303,7 +313,10 @@ async function search() {
   ui.loading('results', '正在查詢…');
 
   try {
-    const { count, records } = await api.get('/api/people?' + params.toString());
+    const { count, records: allRecords } = await api.get('/api/people?' + params.toString());
+    const totalPages = Math.max(1, Math.ceil(count / 20));
+    page = Math.min(Math.max(1, page), totalPages);
+    const records = allRecords.slice((page - 1) * 20, page * 20);
     document.getElementById('count').innerHTML = `共 <strong>${count}</strong> 筆`;
     if (count === 0) {
       ui.empty('results', '沒有符合條件的資料,請調整篩選條件', 'search');
@@ -342,7 +355,7 @@ async function search() {
             `).join('')}
           </tbody>
         </table>
-      </div>`;
+      </div><div class="toolbar mt-2"><button ${page <= 1 ? 'disabled' : ''} onclick="search(${page - 1})" aria-label="上一頁">&larr;</button><span>第 ${page} / ${totalPages} 頁</span><button ${page >= totalPages ? 'disabled' : ''} onclick="search(${page + 1})" aria-label="下一頁">&rarr;</button></div>`;
   } catch (err) {
     ui.toast(err.message, 'error');
     ui.empty('results', '查詢失敗:' + err.message, 'warn');
@@ -383,7 +396,7 @@ async function viewDetail(id) {
               <div class="info-row"><span class="label">願意邀請</span><span class="val">${p['是否願意接受邀請']?ui.badge('願意'):ui.badge('否')}</span></div>
               <div class="info-row"><span class="label">可服務時段</span><span class="val">${(p['可服務時段']||[]).map(t=>`<span class="chip">${t}</span>`).join('')||'—'}</span></div>
               <div class="info-row"><span class="label">所屬善會</span><span class="val">${escape(p['所屬善會文字']||'') || (p['所屬善會']||[]).map(t=>`<span class="chip">${t}</span>`).join('') || '—'}</span></div>
-              <div class="info-row"><span class="label">名片圖檔</span><span class="val">${renderBusinessCard(p['名片圖檔資料'])}</span></div>
+              <div class="info-row"><span class="label">名片圖檔</span><span class="val">${renderBusinessCard(p['名片圖檔資料'])}${p['名片圖檔資料'] ? `<button class="btn-secondary btn-sm" onclick="removeBusinessCard('${id}')">移除名片</button>` : ''}</span></div>
               <div class="info-row"><span class="label">備註</span><span class="val">${escape(p['備註']||'—')}</span></div>
             </div>
 
@@ -559,8 +572,33 @@ function lines(value) {
 }
 
 function renderBusinessCard(value) {
-  if (!value || !/^data:image\/jpe?g;base64,/i.test(value)) return '—';
-  return `<img class="business-card-image" src="${value}" alt="名片圖檔">`;
+  if (typeof value !== 'string' || !/^data:image\/jpe?g;base64,[A-Za-z0-9+/]+={0,2}$/.test(value)) return '—';
+  return `<button type="button" class="btn-ghost" onclick="enlargeBusinessCard(this.querySelector('img').src)" aria-label="放大名片"><img class="business-card-image" src="${value}" alt="名片圖檔"></button>`;
+}
+
+function enlargeBusinessCard(src) {
+  const dialog = document.createElement('dialog');
+  dialog.style.cssText = 'max-width:95vw;max-height:95vh;padding:16px;border:0;border-radius:8px';
+  const close = document.createElement('button');
+  close.textContent = '關閉';
+  close.onclick = () => dialog.close();
+  const image = document.createElement('img');
+  image.src = src;
+  image.alt = '名片放大檢視';
+  image.style.cssText = 'display:block;max-width:85vw;max-height:80vh;object-fit:contain';
+  dialog.append(close, image);
+  dialog.addEventListener('close', () => dialog.remove());
+  document.body.append(dialog);
+  dialog.showModal();
+}
+
+async function removeBusinessCard(id) {
+  if (!await ui.confirm('確定移除此人才的名片圖片？移除後需重新上傳。')) return;
+  try {
+    await api.put('/api/people/' + id, { '名片圖檔資料': '' });
+    await viewDetail(id);
+    ui.toast('名片已移除', 'success');
+  } catch (error) { ui.toast('移除失敗', 'error'); }
 }
 
 function closeModal() {

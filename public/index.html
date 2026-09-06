@@ -680,6 +680,7 @@
           <label>可服務時段</label>
           <select name="time" id="publicTalentTime"><option value="">全部時段</option></select>
         </div>
+        <div><label for="publicTalentSkill">專長</label><select name="skill" id="publicTalentSkill"><option value="">全部專長</option></select></div>
         <button type="submit">查詢</button>
       </form>
       <div id="publicTalentResults" class="talent-results">
@@ -778,11 +779,15 @@
   initTalentSearch();
 
   async function initTalentSearch() {
-    await loadTalentOptions();
     document.getElementById('publicTalentForm').addEventListener('submit', async (event) => {
       event.preventDefault();
       await searchPublicTalents();
     });
+    await loadTalentOptions();
+    try {
+      const { records } = await api.get('/api/skills');
+      fillSelect('publicTalentSkill', records.map(s => s['專長名稱']).filter(Boolean), '全部專長');
+    } catch (error) { document.getElementById('publicTalentSkill').options[0].textContent = '專長載入失敗，請重新整理'; }
   }
 
   async function loadTalentOptions() {
@@ -808,17 +813,19 @@
     });
   }
 
-  async function searchPublicTalents() {
+  async function searchPublicTalents(page = 1) {
     const fd = new FormData(document.getElementById('publicTalentForm'));
     const params = new URLSearchParams();
-    ['keyword', 'area', 'time'].forEach(key => {
+    params.set('page', page);
+    ['keyword', 'area', 'time', 'skill'].forEach(key => {
       const value = String(fd.get(key) || '').trim();
       if (value) params.set(key, value);
     });
     ui.loading('publicTalentResults', '正在查詢已啟用人才…');
     try {
-      const { count, records } = await api.get('/api/people/public/search?' + params.toString());
+      const { count, records, page: currentPage, totalPages } = await api.get('/api/people/public/search?' + params.toString());
       renderPublicTalents(count, records || []);
+      if (count) document.getElementById('publicTalentResults').insertAdjacentHTML('beforeend', `<div class="toolbar mt-2"><button ${currentPage <= 1 ? 'disabled' : ''} onclick="searchPublicTalents(${currentPage - 1})" aria-label="上一頁">&larr;</button><span>第 ${currentPage} / ${totalPages} 頁</span><button ${currentPage >= totalPages ? 'disabled' : ''} onclick="searchPublicTalents(${currentPage + 1})" aria-label="下一頁">&rarr;</button></div>`);
     } catch (err) {
       ui.empty('publicTalentResults', '查詢失敗:' + err.message, 'warn');
     }
